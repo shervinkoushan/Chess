@@ -28,7 +28,7 @@ public class Bishop extends Piece {
             int candidateDestinationCoordinate=this.piecePosition;
             while(BoardUtils.isValidTileCoordinate(candidateDestinationCoordinate)){
                 candidateDestinationCoordinate+=candidateCoordinateOffset;
-                if(BoardUtils.isWhite(this.piecePosition) != BoardUtils.isWhite(candidateDestinationCoordinate)){
+                if(!BoardUtils.sameColor(this.piecePosition,candidateDestinationCoordinate)){
                     break;
                 }
                 if(BoardUtils.isValidTileCoordinate(candidateDestinationCoordinate)){

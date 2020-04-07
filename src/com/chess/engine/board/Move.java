@@ -5,7 +5,9 @@ import com.chess.engine.pieces.Piece;
 public abstract class Move {
     final Board board;
     final Piece movedPiece;
-    final int destinationCoordinate;
+
+    //should not be , only for testing purposes
+    public final int destinationCoordinate;
 
     private Move(final Board board,final Piece movedPiece, final int destinationCoordinate){
         this.board=board;

@@ -32,7 +32,7 @@ public class Queen extends Piece {
                 }
                 candidateDestinationCoordinate+=candidateCoordinateOffset;
                 if(BISHOP_COORDINATES.contains(candidateCoordinateOffset) &&
-                        BoardUtils.isWhite(this.piecePosition) != BoardUtils.isWhite(candidateDestinationCoordinate)){
+                        !BoardUtils.sameColor(this.piecePosition,candidateDestinationCoordinate)){
                     break;
                 }
                 if(BoardUtils.isValidTileCoordinate(candidateDestinationCoordinate)){
