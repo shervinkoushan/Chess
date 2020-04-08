@@ -16,8 +16,8 @@ import static com.chess.engine.board.Move.*;
 public class Bishop extends Piece {
     private final static int[] CANDIDATE_MOVE_COORDINATES={-9,-7,7,9};
 
-    Bishop(int piecePosition, Alliance pieceAlliance) {
-        super(piecePosition, pieceAlliance);
+    public Bishop(final int piecePosition, final Alliance pieceAlliance) {
+        super(PieceType.BISHOP ,piecePosition, pieceAlliance);
     }
 
     @Override

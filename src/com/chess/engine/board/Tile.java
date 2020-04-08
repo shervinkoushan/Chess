@@ -9,7 +9,6 @@ import java.util.Map;
 public abstract class Tile {
     protected final int tileCoordinate;
 
-
     private static final Map<Integer,EmptyTile> EMPTY_TILES_CACHE=createAllPossibleEmptyTiles();
 
     private static Map<Integer,EmptyTile> createAllPossibleEmptyTiles() {
@@ -40,6 +39,11 @@ public abstract class Tile {
         }
 
         @Override
+        public String toString() {
+            return "-";
+        }
+
+        @Override
         public boolean isTileOccupied(){
             return false;
         }
@@ -57,6 +61,10 @@ public abstract class Tile {
             super(tileCoordinate);
             this.pieceOnTile=pieceOnTile;
         }
+
+        @Override
+        public String toString() {
+            return pieceOnTile.getPieceAlliance().isBlack() ? pieceOnTile.toString().toLowerCase() : pieceOnTile.toString();        }
 
         @Override
         public boolean isTileOccupied(){

@@ -16,8 +16,8 @@ public class King extends Piece {
     private static final Set<Integer> EDGE_COORDINATES = new HashSet<Integer>(Arrays.asList(-9,-1,7));
 
 
-    King(int piecePosition, Alliance pieceAlliance) {
-        super(piecePosition, pieceAlliance);
+    public King(final int piecePosition, final Alliance pieceAlliance) {
+        super(PieceType.KING ,piecePosition, pieceAlliance);
     }
 
     @Override
