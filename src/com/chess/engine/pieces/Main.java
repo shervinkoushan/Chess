@@ -15,11 +15,11 @@ public class Main {
         Queen queen = new Queen(BoardUtils.mapPosition("e4"),Alliance.WHITE);
         Bishop bishop = new Bishop(BoardUtils.mapPosition("d5"),Alliance.WHITE);
         Rook rook = new Rook(BoardUtils.mapPosition("d4"),Alliance.WHITE);
-        Collection <Move> moves =queen.calculateLegalMoves(board);
+        Pawn pawn=new Pawn(BoardUtils.mapPosition("a7"),Alliance.BLACK);
+        King king=new King(BoardUtils.mapPosition("a1"),Alliance.BLACK);
+        Collection <Move> moves =king.calculateLegalMoves(board);
         for(Move move:moves){
-            //System.out.println(BoardUtils.mapCoordinate(move.destinationCoordinate));
+            System.out.println(BoardUtils.mapCoordinate(move.destinationCoordinate));
         }
-
     }
-
 }

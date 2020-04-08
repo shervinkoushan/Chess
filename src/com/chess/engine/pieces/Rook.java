@@ -14,7 +14,7 @@ import java.util.List;
 import static com.chess.engine.board.Move.*;
 
 public class Rook extends Piece {
-    private final static int[] CANDIDATE_MOVE_VECTOR_COORDINATES={-8,-1,1,8};
+    private final static int[] CANDIDATE_MOVE_COORDINATES={-8,-1,1,8};
 
     Rook(int piecePosition, Alliance pieceAlliance) {
         super(piecePosition, pieceAlliance);
@@ -24,15 +24,15 @@ public class Rook extends Piece {
     public Collection<Move> calculateLegalMoves(final  Board board) {
         final List<Move> legalMoves = new ArrayList<>();
 
-        for(final int candidateCoordinateOffset:CANDIDATE_MOVE_VECTOR_COORDINATES){
+        for(final int currentCandidateOffset:CANDIDATE_MOVE_COORDINATES){
             int candidateDestinationCoordinate=this.piecePosition;
             while(BoardUtils.isValidTileCoordinate(candidateDestinationCoordinate)){
-                if(candidateDestinationCoordinate%8==0 && candidateCoordinateOffset==-1
-                        || candidateDestinationCoordinate%8==7 && candidateCoordinateOffset==1){
+                if(BoardUtils.getColumn(candidateDestinationCoordinate)==1 && currentCandidateOffset==-1
+                        || BoardUtils.getColumn(candidateDestinationCoordinate)==8 && currentCandidateOffset==1){
                     break;
                 }
 
-                candidateDestinationCoordinate+=candidateCoordinateOffset;
+                candidateDestinationCoordinate+=currentCandidateOffset;
                 if(BoardUtils.isValidTileCoordinate(candidateDestinationCoordinate)){
                     final Tile candidateDestinationTile= board.getTile(candidateDestinationCoordinate);
                     if(!candidateDestinationTile.isTileOccupied()){
@@ -40,8 +40,7 @@ public class Rook extends Piece {
                     }
                     else{
                         final Piece pieceAtDestination = candidateDestinationTile.getPiece();
-                        final Alliance pieceAlliance=pieceAtDestination.getPieceAlliance();
-                        if(this.pieceAlliance!=pieceAlliance){
+                        if(this.pieceAlliance!=pieceAtDestination.pieceAlliance){
                             legalMoves.add(new AttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
                         }
                         break;

@@ -40,6 +40,14 @@ public class BoardUtils {
         return WHITE_POSITIONS2;
     }
 
+    public static int getRow(int coordinate){
+        return 8-coordinate/8;
+    }
+
+    public static int getColumn(int coordinate){
+        return (coordinate%8)+1;
+    }
+
     public static boolean isValidTileCoordinate(final int coordinate)
     {
         return coordinate >=0 && coordinate <NUM_TILES;
