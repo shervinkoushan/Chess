@@ -52,4 +52,9 @@ public class Queen extends Piece {
         }
         return ImmutableList.copyOf(legalMoves);
     }
+
+    @Override
+    public Queen movePiece(final Move move) {
+        return new Queen(move.getDestinationCoordinate(),move.getMovedPiece().getPieceAlliance());
+    }
 }
