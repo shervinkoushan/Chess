@@ -17,7 +17,11 @@ public class King extends Piece {
 
 
     public King(final int piecePosition, final Alliance pieceAlliance) {
-        super(PieceType.KING ,piecePosition, pieceAlliance);
+        super(PieceType.KING ,piecePosition, pieceAlliance, true);
+    }
+
+    public King(final int piecePosition, final Alliance pieceAlliance, final boolean isFirstMove) {
+        super(PieceType.KING ,piecePosition, pieceAlliance, isFirstMove);
     }
 
     @Override
@@ -40,7 +44,7 @@ public class King extends Piece {
                 else{
                     final Piece pieceAtDestination = candidateDestinationTile.getPiece();
                     if(this.pieceAlliance!=pieceAtDestination.pieceAlliance){
-                        legalMoves.add(new AttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
+                        legalMoves.add(new MajorAttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
                     }
                 }
             }

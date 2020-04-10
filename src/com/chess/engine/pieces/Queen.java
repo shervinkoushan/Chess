@@ -16,7 +16,11 @@ public class Queen extends Piece {
     private static final Set<Integer> BISHOP_COORDINATES = new HashSet<Integer>(Arrays.asList(-9,-7,7,9));
 
     public Queen(final int piecePosition, final Alliance pieceAlliance) {
-        super(PieceType.QUEEN ,piecePosition, pieceAlliance);
+        super(PieceType.QUEEN ,piecePosition, pieceAlliance,true);
+    }
+
+    public Queen(final int piecePosition, final Alliance pieceAlliance, final boolean isFirstMove) {
+        super(PieceType.QUEEN ,piecePosition, pieceAlliance, isFirstMove);
     }
 
     @Override
@@ -43,7 +47,7 @@ public class Queen extends Piece {
                     else{
                         final Piece pieceAtDestination = candidateDestinationTile.getPiece();
                         if(this.pieceAlliance!=pieceAtDestination.pieceAlliance){
-                            legalMoves.add(new AttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
+                            legalMoves.add(new MajorAttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
                         }
                         break;
                     }

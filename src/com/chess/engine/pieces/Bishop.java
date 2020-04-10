@@ -17,7 +17,11 @@ public class Bishop extends Piece {
     private final static int[] CANDIDATE_MOVE_COORDINATES={-9,-7,7,9};
 
     public Bishop(final int piecePosition, final Alliance pieceAlliance) {
-        super(PieceType.BISHOP ,piecePosition, pieceAlliance);
+        super(PieceType.BISHOP ,piecePosition, pieceAlliance, true);
+    }
+
+    public Bishop(final int piecePosition, final Alliance pieceAlliance, final boolean isFirstMove) {
+        super(PieceType.BISHOP ,piecePosition, pieceAlliance, isFirstMove);
     }
 
     @Override
@@ -39,7 +43,7 @@ public class Bishop extends Piece {
                     else{
                         final Piece pieceAtDestination = candidateDestinationTile.getPiece();
                         if(this.pieceAlliance!=pieceAtDestination.pieceAlliance){
-                            legalMoves.add(new AttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
+                            legalMoves.add(new MajorAttackMove(board,this,candidateDestinationCoordinate,pieceAtDestination));
                         }
                         break;
                     }

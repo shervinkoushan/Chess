@@ -29,7 +29,7 @@ public class BlackPlayer extends Player{
 
     @Override
     public Alliance getAlliance() {
-        return Alliance.WHITE;
+        return Alliance.BLACK;
     }
 
     @Override
