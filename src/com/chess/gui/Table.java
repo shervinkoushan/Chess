@@ -298,7 +298,11 @@ public class Table {
         private void highlightLegalMoves(final Board board){
             if(highlightLegalMoves){
                 for(final Move move: pieceLegalMoves(board)){
-                    if(move.getDestinationCoordinate()==this.tileId){
+                    MoveTransition transition = board.currentPlayer().makeMove(move);
+                    if(!transition.getMoveStatus().isDone()){
+                        continue;
+                    }
+                    else if(move.getDestinationCoordinate()==this.tileId){
                         try{
                             add(new JLabel(new ImageIcon(ImageIO.read(new File("art/misc/green_dot.png")))));
                         }

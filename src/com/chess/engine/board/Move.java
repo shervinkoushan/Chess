@@ -294,7 +294,7 @@ public abstract class Move {
 
         @Override
         public String toString(){
-            return super.toString()+this.promotedPawn.getPromotionPiece();
+            return decoratedMove.toString()+"="+this.promotedPawn.getPromotionPiece();
         }
     }
 

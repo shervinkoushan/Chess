@@ -37,6 +37,11 @@ public class WhitePlayer extends Player{
     }
 
     @Override
+    public String toString(){
+        return "Whiteplayer";
+    }
+
+    @Override
     protected Collection<Move> calculateKingCastles(final Collection<Move> playerLegals, final Collection<Move> opponentLegals) {
         final List<Move> kingCastles = new ArrayList<>();
 
