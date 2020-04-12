@@ -3,8 +3,7 @@ package com.chess.engine.board;
 import com.chess.engine.pieces.Pawn;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.pieces.Rook;
-
-import java.lang.annotation.Inherited;
+import com.chess.engine.player.MoveTransition;
 
 import static com.chess.engine.board.Board.*;
 
@@ -83,6 +82,19 @@ public abstract class Move {
         return null;
     }
 
+    protected String calculateCheckAndCheckMateHash() {
+        MoveTransition transition=this.board.currentPlayer().makeMove(this);
+        Board board=transition.getTransitionBoard();
+
+        if(board.currentPlayer().isInCheckMate()){
+            return "#";
+        }
+        else if (board.currentPlayer().isInCheck()){
+            return "+";
+        }
+        return "";
+    }
+
     public Board execute() {
         final Builder builder = new Builder();
 
@@ -117,7 +129,8 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return this.movedPiece+"x"+BoardUtils.mapCoordinate(this.destinationCoordinate);
+            return this.movedPiece+"x"+BoardUtils.mapCoordinate(this.destinationCoordinate)+
+                    calculateCheckAndCheckMateHash();
         }
     }
 
@@ -135,7 +148,8 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return this.movedPiece+BoardUtils.mapCoordinate(this.destinationCoordinate);
+            return this.movedPiece+BoardUtils.mapCoordinate(this.destinationCoordinate)+
+                    calculateCheckAndCheckMateHash();
         }
     }
 
@@ -192,7 +206,8 @@ public abstract class Move {
 
         @Override
         public String toString(){
-            return BoardUtils.mapCoordinate(this.destinationCoordinate);
+            return BoardUtils.mapCoordinate(this.destinationCoordinate)+
+                    calculateCheckAndCheckMateHash();
         }
     }
 
@@ -210,7 +225,8 @@ public abstract class Move {
 
         @Override
         public String toString(){
-            return BoardUtils.mapCoordinate(this.movedPiece.getPiecePosition()).substring(0,1)+"x"+BoardUtils.mapCoordinate(this.destinationCoordinate);
+            return BoardUtils.mapCoordinate(this.movedPiece.getPiecePosition()).substring(0,1)+"x"+BoardUtils.mapCoordinate(this.destinationCoordinate)+
+                    calculateCheckAndCheckMateHash();
         }
     }
 
@@ -294,7 +310,8 @@ public abstract class Move {
 
         @Override
         public String toString(){
-            return decoratedMove.toString()+"="+this.promotedPawn.getPromotionPiece();
+            return decoratedMove.toString()+"="+this.promotedPawn.getPromotionPiece()+
+                    calculateCheckAndCheckMateHash();
         }
     }
 
@@ -330,7 +347,8 @@ public abstract class Move {
 
         @Override
         public String toString(){
-            return BoardUtils.mapCoordinate(this.destinationCoordinate);
+            return BoardUtils.mapCoordinate(this.destinationCoordinate)+
+                    calculateCheckAndCheckMateHash();
         }
     }
 
@@ -418,7 +436,7 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return "O-O-O";
+            return "O-O-O"+calculateCheckAndCheckMateHash();
         }
     }
 
@@ -439,7 +457,7 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return "O-O";
+            return "O-O"+calculateCheckAndCheckMateHash();
         }
     }
 

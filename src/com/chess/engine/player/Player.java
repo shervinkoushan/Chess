@@ -3,8 +3,10 @@ package com.chess.engine.player;
 import com.chess.engine.Alliance;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.Move;
+import com.chess.engine.board.Tile;
 import com.chess.engine.pieces.King;
 import com.chess.engine.pieces.Piece;
+import com.chess.engine.pieces.Rook;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 
@@ -103,7 +105,39 @@ public abstract class Player {
     public abstract Collection<Piece> getActivePieces();
     public abstract Alliance getAlliance();
     public abstract Player getOpponent();
-    protected abstract Collection<Move> calculateKingCastles(Collection <Move> playerLegals, Collection<Move> opponentLegals);
 
-    
+    protected Collection<Move> calculateKingCastles(final Collection<Move> playerLegals, final Collection<Move> opponentLegals) {
+        final List<Move> kingCastles = new ArrayList<>();
+        final int offset=this.getAlliance().isWhite() ? 56 : 0;
+
+        if(this.playerKing.isFirstMove() && this.playerKing.getPiecePosition() == (4+offset) && !this.isInCheck()){
+            if(!this.board.getTile(5+offset).isTileOccupied() && !this.board.getTile(6+offset).isTileOccupied()){
+                final Tile rookTile=this.board.getTile(7+offset);
+                if(rookTile.isTileOccupied() && rookTile.getPiece().isFirstMove()){
+                    if(Player.calculateAttacksOnTile(5+offset,opponentLegals).isEmpty() &&
+                            Player.calculateAttacksOnTile(6+offset,opponentLegals).isEmpty() &&
+                            rookTile.getPiece().getPieceType()== ROOK){
+                        kingCastles.add(new Move.KingSideCastleMove(this.board,this.playerKing,6+offset,
+                                (Rook)rookTile.getPiece(),rookTile.getTileCoordinate(),5+offset));
+                    }
+                }
+            }
+
+            if(!this.board.getTile(1+offset).isTileOccupied()
+                    && !this.board.getTile(2+offset).isTileOccupied()
+                    && !this.board.getTile(3+offset).isTileOccupied()){
+                final Tile rookTile=this.board.getTile(0+offset);
+                if(rookTile.isTileOccupied() && rookTile.getPiece().isFirstMove()){
+                    if(Player.calculateAttacksOnTile(2+offset,opponentLegals).isEmpty() &&
+                            Player.calculateAttacksOnTile(3+offset,opponentLegals).isEmpty() &&
+                            rookTile.getPiece().getPieceType()== ROOK){
+                        kingCastles.add(new Move.QueenSideCastleMove(this.board,this.playerKing,2+offset,
+                                (Rook)rookTile.getPiece(),rookTile.getTileCoordinate(),3+offset));
+                    }
+                }
+            }
+        }
+
+        return ImmutableList.copyOf(kingCastles);
+    }
 }

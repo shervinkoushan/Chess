@@ -3,6 +3,7 @@ package com.chess.engine.board;
 import com.chess.engine.Alliance;
 import com.chess.engine.pieces.*;
 import com.chess.engine.player.BlackPlayer;
+import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.Player;
 import com.chess.engine.player.WhitePlayer;
 import com.google.common.collect.ImmutableList;
@@ -51,9 +52,22 @@ public class Board {
         final List<Move> legalMoves = new ArrayList<>();
 
         for(final Piece piece:pieces){
-            legalMoves.addAll(piece.calculateLegalMoves(this));
+            final Collection<Move> possibleLegalMoves = piece.calculateLegalMoves(this);
+            legalMoves.addAll(possibleLegalMoves);
+            //legalMoves.addAll(calculateTrueLegalMoves(possibleLegalMoves));
         }
 
+        return ImmutableList.copyOf(legalMoves);
+    }
+
+    public Collection<Move> calculateTrueLegalMoves(final Collection<Move> possibleLegalMoves) {
+        final List<Move> legalMoves = new ArrayList<>();
+        for(final Move move: possibleLegalMoves) {
+            MoveTransition transition = this.currentPlayer().makeMove(move);
+            if (transition.getMoveStatus().isDone()) {
+                legalMoves.add(move);
+            }
+        }
         return ImmutableList.copyOf(legalMoves);
     }
 

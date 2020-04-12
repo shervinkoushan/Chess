@@ -25,6 +25,7 @@ public class MiniMax implements MoveStrategy{
 
         int numMoves=board.currentPlayer().getLegalMoves().size();
 
+        long inLoopTime=System.currentTimeMillis();
         for(final Move move:board.currentPlayer().getLegalMoves()){
             final MoveTransition moveTransition=board.currentPlayer().makeMove(move);
             if(moveTransition.getMoveStatus().isDone()){
@@ -35,12 +36,18 @@ public class MiniMax implements MoveStrategy{
                 if(board.currentPlayer().getAlliance().isWhite() && currentValue>= highestSeenValue){
                     highestSeenValue=currentValue;
                     bestMove=move;
-                    System.out.println("Best move is "+bestMove+" - value "+highestSeenValue);
+                    System.out.println("Best move is "+bestMove+" - value "+highestSeenValue +
+                            "\t Computation took "+(System.currentTimeMillis()-inLoopTime)+" ms"+
+                            "\t Total time: "+(System.currentTimeMillis()-startTime)+" ms");
+                    inLoopTime=System.currentTimeMillis();
                 }
                 else if(board.currentPlayer().getAlliance().isBlack() && currentValue<=lowestSeenValue){
                     lowestSeenValue=currentValue;
                     bestMove=move;
-                    System.out.println("Best move is "+bestMove +" - value "+lowestSeenValue);
+                    System.out.println("Best move is "+bestMove+" - value "+lowestSeenValue +
+                            "\t Computation took "+(System.currentTimeMillis()-inLoopTime)+" ms"+
+                            "\t Total time: "+(System.currentTimeMillis()-startTime)+" ms");
+                    inLoopTime=System.currentTimeMillis();
                 }
             }
         }

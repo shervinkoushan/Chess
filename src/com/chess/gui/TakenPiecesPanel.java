@@ -20,25 +20,26 @@ public class TakenPiecesPanel extends JPanel {
     private final JPanel southPanel;
 
     private static final EtchedBorder PANEL_BORDER=new EtchedBorder(EtchedBorder.RAISED);
-    private static final Dimension TAKEN_PIECES_DIMENSION=new Dimension(40,80);
+    private static final Dimension TAKEN_PIECES_DIMENSION=new Dimension(70,80);
     private static final Color PANEL_COLOR=Color.decode("0xFDF5E6");
+    private static final int SCALING_FACTOR =3;
 
     public TakenPiecesPanel(){
         super(new BorderLayout());
-        this.setBackground(PANEL_COLOR);
-        this.setBorder(PANEL_BORDER);
+        setBackground(PANEL_COLOR);
+        setBorder(PANEL_BORDER);
         this.northPanel=new JPanel(new GridLayout(8,2));
         this.southPanel=new JPanel(new GridLayout(8,2));
         this.northPanel.setBackground(PANEL_COLOR);
         this.southPanel.setBackground(PANEL_COLOR);
-        this.add(this.northPanel,BorderLayout.NORTH);
-        this.add(this.southPanel,BorderLayout.SOUTH);
-        this.setPreferredSize(TAKEN_PIECES_DIMENSION);
+        add(this.northPanel,BorderLayout.NORTH);
+        add(this.southPanel,BorderLayout.SOUTH);
+        setPreferredSize(TAKEN_PIECES_DIMENSION);
     }
 
     public void redo(final MoveLog movelog){
-        this.southPanel.removeAll();
-        this.northPanel.removeAll();
+        southPanel.removeAll();
+        northPanel.removeAll();
 
         final List<Piece> whiteTakenPieces=new ArrayList<>();
         final List<Piece> blackTakenPieces=new ArrayList<>();
@@ -62,7 +63,7 @@ public class TakenPiecesPanel extends JPanel {
             }
         });
 
-        Collections.sort(whiteTakenPieces, new Comparator<Piece>() {
+        Collections.sort(blackTakenPieces, new Comparator<Piece>() {
             @Override
             public int compare(Piece o1, Piece o2) {
                 return Ints.compare(o1.getPieceValue(),o2.getPieceValue());
@@ -75,7 +76,7 @@ public class TakenPiecesPanel extends JPanel {
                         takenPiece.getPieceAlliance().toString().substring(0,1)+takenPiece.toString()+".png"));
                 final ImageIcon ic = new ImageIcon(image);
                 final JLabel imageLabel = new JLabel(new ImageIcon(ic.getImage().getScaledInstance(
-                        ic.getIconWidth()/20, ic.getIconWidth()/20, Image.SCALE_SMOOTH)));
+                        ic.getIconWidth()/SCALING_FACTOR, ic.getIconWidth()/SCALING_FACTOR, Image.SCALE_SMOOTH)));
                 this.southPanel.add(imageLabel);
             }
             catch (final IOException e){
@@ -89,8 +90,8 @@ public class TakenPiecesPanel extends JPanel {
                         takenPiece.getPieceAlliance().toString().substring(0,1)+takenPiece.toString()+".png"));
                 final ImageIcon ic = new ImageIcon(image);
                 final JLabel imageLabel = new JLabel(new ImageIcon(ic.getImage().getScaledInstance(
-                        ic.getIconWidth() - 15, ic.getIconWidth() - 15, Image.SCALE_SMOOTH)));
-                this.southPanel.add(imageLabel);
+                        ic.getIconWidth()/SCALING_FACTOR, ic.getIconWidth()/SCALING_FACTOR, Image.SCALE_SMOOTH)));
+                this.northPanel.add(imageLabel);
             }
             catch (final IOException e){
                 e.printStackTrace();

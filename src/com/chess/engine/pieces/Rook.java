@@ -5,6 +5,7 @@ import com.chess.engine.board.Board;
 import com.chess.engine.board.BoardUtils;
 import com.chess.engine.board.Move;
 import com.chess.engine.board.Tile;
+import com.chess.engine.player.MoveTransition;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -57,6 +58,6 @@ public class Rook extends Piece {
 
     @Override
     public Rook movePiece(final Move move) {
-        return new Rook(move.getDestinationCoordinate(),move.getMovedPiece().getPieceAlliance());
+        return new Rook(move.getDestinationCoordinate(),move.getMovedPiece().getPieceAlliance(),false);
     }
 }

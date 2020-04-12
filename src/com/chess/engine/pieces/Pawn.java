@@ -4,6 +4,7 @@ import com.chess.engine.Alliance;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.BoardUtils;
 import com.chess.engine.board.Move;
+import com.chess.engine.player.MoveTransition;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
