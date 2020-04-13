@@ -2,12 +2,18 @@ package com.chess.gui;
 
 import com.chess.engine.Alliance;
 import com.chess.engine.player.Player;
+import com.chess.engine.player.ai.BoardEvaluator;
+import com.chess.engine.player.ai.ModifiedBoardEvaluator;
+import com.chess.engine.player.ai.StandardBoardEvaluator;
 import com.chess.gui.Table.PlayerType;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 class GameSetup extends JDialog {
 
@@ -16,13 +22,19 @@ class GameSetup extends JDialog {
     private JSpinner whiteSearchDepthSpinner;
     private JSpinner blackSearchDepthSpinner;
 
+    private BoardEvaluator whiteBoardEvaluator=new StandardBoardEvaluator();
+    private BoardEvaluator blackBoardEvaluator=new StandardBoardEvaluator();
+
+
     private static final String HUMAN_TEXT = "Human";
     private static final String COMPUTER_TEXT = "Computer";
 
     GameSetup(final JFrame frame,
               final boolean modal) {
         super(frame, modal);
-        final JPanel myPanel = new JPanel(new GridLayout(0, 1));
+        final JPanel myPanel = new JPanel();
+        //myPanel.setLayout(new BoxLayout(myPanel,BoxLayout.PAGE_AXIS));
+        myPanel.setLayout(new GridLayout(0,1));
         final JRadioButton whiteHumanButton = new JRadioButton(HUMAN_TEXT);
         final JRadioButton whiteComputerButton = new JRadioButton(COMPUTER_TEXT);
         final JRadioButton blackHumanButton = new JRadioButton(HUMAN_TEXT);
@@ -33,22 +45,71 @@ class GameSetup extends JDialog {
         whiteGroup.add(whiteComputerButton);
         whiteHumanButton.setSelected(true);
 
+        getContentPane().add(myPanel);
+        myPanel.add(new JLabel("White"));
+        myPanel.add(whiteHumanButton);
+        myPanel.add(whiteComputerButton);
+
+        myPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        myPanel.add(new JLabel("White board evaluator"));
+        String[] choices = {"Standard", "Modified"};
+        final JComboBox<String> cb = new JComboBox<String>(choices);
+        cb.setSelectedIndex(0);
+        cb.setVisible(true);
+        myPanel.add(cb);
+
+        cb.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                JComboBox cb = (JComboBox) e.getSource();
+                String chosenEvaluator = (String) cb.getSelectedItem();
+                switch(chosenEvaluator){
+                    case "Standard":
+                        whiteBoardEvaluator = new StandardBoardEvaluator();
+                        break;
+                    case "Modified":
+                        whiteBoardEvaluator = new ModifiedBoardEvaluator();
+                        break;
+                }
+            }
+        });
+
+        this.whiteSearchDepthSpinner = addLabeledSpinner(myPanel, "White Search Depth", new SpinnerNumberModel(4, 0, Integer.MAX_VALUE, 1));
+
+
         final ButtonGroup blackGroup = new ButtonGroup();
         blackGroup.add(blackHumanButton);
         blackGroup.add(blackComputerButton);
         blackHumanButton.setSelected(true);
 
-        getContentPane().add(myPanel);
-        myPanel.add(new JLabel("White"));
-        myPanel.add(whiteHumanButton);
-        myPanel.add(whiteComputerButton);
         myPanel.add(new JLabel("Black"));
         myPanel.add(blackHumanButton);
         myPanel.add(blackComputerButton);
 
-        myPanel.add(new JLabel("Search"));
-        this.whiteSearchDepthSpinner = addLabeledSpinner(myPanel, "White Search Depth", new SpinnerNumberModel(6, 0, Integer.MAX_VALUE, 1));
-        this.blackSearchDepthSpinner = addLabeledSpinner(myPanel, "Black Search Depth", new SpinnerNumberModel(6, 0, Integer.MAX_VALUE, 1));
+        myPanel.add(new JLabel("Black board evaluator"));
+        final JComboBox<String> cb2 = new JComboBox<String>(choices);
+        cb2.setSelectedIndex(0);
+        cb2.setVisible(true);
+        myPanel.add(cb2);
+
+        cb2.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                JComboBox cb2 = (JComboBox) e.getSource();
+                String chosenEvaluator = (String) cb2.getSelectedItem();
+                switch(chosenEvaluator){
+                    case "Standard":
+                        blackBoardEvaluator = new StandardBoardEvaluator();
+                        break;
+                    case "Modified":
+                        blackBoardEvaluator = new ModifiedBoardEvaluator();
+                        break;
+                }
+            }
+        });
+
+        this.blackSearchDepthSpinner = addLabeledSpinner(myPanel, "Black Search Depth", new SpinnerNumberModel(4, 0, Integer.MAX_VALUE, 1));
 
         final JButton cancelButton = new JButton("Cancel");
         final JButton okButton = new JButton("OK");
@@ -74,7 +135,8 @@ class GameSetup extends JDialog {
         setLocationRelativeTo(frame);
         pack();
         setVisible(false);
-    }
+        }
+
 
     void promptUser() {
         setVisible(true);
@@ -113,5 +175,13 @@ class GameSetup extends JDialog {
 
     int getBlackSearchDepth() {
         return (Integer)this.blackSearchDepthSpinner.getValue();
+    }
+
+    BoardEvaluator getWhiteBoardEvaluator(){
+        return this.whiteBoardEvaluator;
+    }
+
+    BoardEvaluator getBlackBoardEvaluator(){
+        return this.blackBoardEvaluator;
     }
 }

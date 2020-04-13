@@ -7,6 +7,7 @@ import com.chess.engine.board.Move;
 import com.chess.engine.pieces.*;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.ai.MiniMax;
+import com.chess.engine.player.ai.ModifiedBoardEvaluator;
 import com.chess.engine.player.ai.MoveStrategy;
 import org.junit.jupiter.api.Test;
 
@@ -75,5 +76,12 @@ class BoardTest {
         final Move aiMove = strategy.execute(t1.getTransitionBoard());
         //final Move bestMove = Move.MoveFactory.createMove(t3.getTransitionBoard(),BoardUtils.mapPosition("d8"),BoardUtils.mapPosition("h4"));
         //assertEquals(aiMove,bestMove);
+    }
+
+    @Test
+    public void testPieceValues() {
+        final Board board = Board.createStandardBoard();
+        ModifiedBoardEvaluator modifiedEvaluator=new ModifiedBoardEvaluator();
+        //assertEquals(modifiedEvaluator.pieceValue(board.whitePlayer()),800+10000+900+2*500+700+600);
     }
 }

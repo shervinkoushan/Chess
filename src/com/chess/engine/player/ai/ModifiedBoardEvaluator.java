@@ -4,17 +4,25 @@ import com.chess.engine.board.Board;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.player.Player;
 
-public final class StandardBoardEvaluator implements BoardEvaluator {
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.chess.engine.pieces.Piece.PieceType.*;
+
+public final class ModifiedBoardEvaluator implements BoardEvaluator {
     private static final int CHECK_BONUS=50;
     private static final int CHECKMATE_BONUS=10000;
     private static final int DEPTH_BONUS=100;
     private static final int CASTLE_BONUS=60;
     private static final int MOBILITY_BONUS=30;
 
+    private static Map<Piece.PieceType,Integer> pieceValues=Map.of(PAWN, 100, KNIGHT,300, BISHOP, 350,ROOK,500,QUEEN,900,KING, 10000);
+
     @Override
     public String toString(){
-        return "Standard Board Evaluator";
+        return "Modified Board Evaluator";
     }
+
 
     @Override
     public int evaluate(final Board board, final int depth) {
@@ -52,7 +60,11 @@ public final class StandardBoardEvaluator implements BoardEvaluator {
     private static int pieceValue(final Player player){
         int pieceValueScore=0;
         for(final Piece piece : player.getActivePieces()){
-            pieceValueScore+=piece.getPieceValue();
+            for (Map.Entry<Piece.PieceType, Integer> entry :pieceValues.entrySet()) {
+                if (entry.getKey().equals(piece.getPieceType())) {
+                    pieceValueScore+=entry.getValue();
+                }
+            }
         }
         return pieceValueScore;
     }

@@ -8,10 +8,16 @@ public class MiniMax implements MoveStrategy{
     private final BoardEvaluator boardEvaluator;
     private final int searchDepth;
 
+    public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator){
+        //this.boardEvaluator= new StandardBoardEvaluator();
+        this.boardEvaluator=boardEvaluator;
+        this.searchDepth=searchDepth;
+    }
     public MiniMax(final int searchDepth){
         this.boardEvaluator= new StandardBoardEvaluator();
         this.searchDepth=searchDepth;
     }
+
 
     @Override
     public Move execute(Board board) {
@@ -21,7 +27,7 @@ public class MiniMax implements MoveStrategy{
         int lowestSeenValue=Integer.MAX_VALUE;
         int currentValue;
 
-        System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth);
+        System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator);
 
         int numMoves=board.currentPlayer().getLegalMoves().size();
 
@@ -49,6 +55,9 @@ public class MiniMax implements MoveStrategy{
                             "\t Total time: "+(System.currentTimeMillis()-startTime)+" ms");
                     inLoopTime=System.currentTimeMillis();
                 }
+                /*numMoves--;
+                System.out.println(numMoves+" moves left to analyze. Best move so far is "+bestMove+" with value "+
+                        (board.currentPlayer().getAlliance().isBlack() ? lowestSeenValue : highestSeenValue) );*/
             }
         }
         final long executionTime=System.currentTimeMillis()-startTime;

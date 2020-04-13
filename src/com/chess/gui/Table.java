@@ -115,12 +115,11 @@ public class Table extends Observable {
         protected Move doInBackground() throws Exception{
             final MoveStrategy miniMax;
             if(Table.get().getGameBoard().currentPlayer().getAlliance().isWhite()){
-                miniMax=new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth());
+                miniMax=new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth(),Table.get().getGameSetup().getWhiteBoardEvaluator());
             }
             else{
-                miniMax=new MiniMax(Table.get().getGameSetup().getBlackSearchDepth());
+                miniMax=new MiniMax(Table.get().getGameSetup().getBlackSearchDepth(),Table.get().getGameSetup().getBlackBoardEvaluator());
             }
-
 
             final Move bestMove=miniMax.execute(Table.get().getGameBoard());
 
