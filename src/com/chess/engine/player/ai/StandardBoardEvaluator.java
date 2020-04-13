@@ -23,9 +23,9 @@ public final class StandardBoardEvaluator implements BoardEvaluator {
     }
 
     private int scorePlayer(final Board board, final Player player, final int depth) {
-        if(player.getOpponent().isInStaleMate() || player.isInStaleMate()){
+        /*if(board.currentPlayer().getOpponent().isInStaleMate() || board.currentPlayer().isInStaleMate()){
             return 0;
-        }
+        }*/
         return pieceValue(player) + mobility(player) + check(player) + checkMate(player,depth) + castled(player);
     }
 

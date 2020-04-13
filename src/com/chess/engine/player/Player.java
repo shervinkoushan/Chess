@@ -21,6 +21,8 @@ public abstract class Player {
     protected final King playerKing;
     protected final Collection<Move> legalMoves;
     private final boolean isInCheck;
+    private boolean isKingSideCastleCapable;
+    private boolean isQueenSideCastleCapable;
 
     Player(final Board board, final Collection<Move> legalMoves, final Collection <Move> opponentMoves){
         this.board=board;
@@ -110,6 +112,8 @@ public abstract class Player {
         final List<Move> kingCastles = new ArrayList<>();
         final int offset=this.getAlliance().isWhite() ? 56 : 0;
 
+        this.isKingSideCastleCapable=false;
+        this.isQueenSideCastleCapable=false;
         if(this.playerKing.isFirstMove() && this.playerKing.getPiecePosition() == (4+offset) && !this.isInCheck()){
             if(!this.board.getTile(5+offset).isTileOccupied() && !this.board.getTile(6+offset).isTileOccupied()){
                 final Tile rookTile=this.board.getTile(7+offset);
@@ -119,6 +123,7 @@ public abstract class Player {
                             rookTile.getPiece().getPieceType()== ROOK){
                         kingCastles.add(new Move.KingSideCastleMove(this.board,this.playerKing,6+offset,
                                 (Rook)rookTile.getPiece(),rookTile.getTileCoordinate(),5+offset));
+                        this.isKingSideCastleCapable=true;
                     }
                 }
             }
@@ -133,11 +138,20 @@ public abstract class Player {
                             rookTile.getPiece().getPieceType()== ROOK){
                         kingCastles.add(new Move.QueenSideCastleMove(this.board,this.playerKing,2+offset,
                                 (Rook)rookTile.getPiece(),rookTile.getTileCoordinate(),3+offset));
+                        this.isQueenSideCastleCapable=true;
                     }
                 }
             }
         }
 
         return ImmutableList.copyOf(kingCastles);
+    }
+
+    public boolean isKingSideCastleCapable() {
+        return this.isKingSideCastleCapable;
+    }
+
+    public boolean isQueenSideCastleCapable() {
+        return this.isQueenSideCastleCapable;
     }
 }

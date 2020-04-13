@@ -31,9 +31,9 @@ public final class ModifiedBoardEvaluator implements BoardEvaluator {
     }
 
     private int scorePlayer(final Board board, final Player player, final int depth) {
-        if(player.getOpponent().isInStaleMate() || player.isInStaleMate()){
+        /*if(player.getOpponent().isInStaleMate() || player.isInStaleMate()){
             return 0;
-        }
+        }*/
         return pieceValue(player) + mobility(player) + check(player) + checkMate(player,depth) + castled(player);
     }
 

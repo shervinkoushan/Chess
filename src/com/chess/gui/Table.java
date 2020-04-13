@@ -10,6 +10,7 @@ import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.Player;
 import com.chess.engine.player.ai.MiniMax;
 import com.chess.engine.player.ai.MoveStrategy;
+import com.chess.pgn.FenUtilities;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.Test;
 
@@ -146,6 +147,7 @@ public class Table extends Observable {
     }
 
     private void moveMadeUpdate(final PlayerType playerType) {
+        //System.out.println(FenUtilities.createFENFromGame(Table.get().getGameBoard()));
         setChanged();
         notifyObservers(playerType);
     }

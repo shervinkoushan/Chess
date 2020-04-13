@@ -18,7 +18,6 @@ public class MiniMax implements MoveStrategy{
         this.searchDepth=searchDepth;
     }
 
-
     @Override
     public Move execute(Board board) {
         final long startTime=System.currentTimeMillis();
