@@ -7,9 +7,11 @@ import com.chess.engine.player.MoveTransition;
 public class MiniMax implements MoveStrategy{
     private final BoardEvaluator boardEvaluator;
     private final int searchDepth;
+    private Move suggestedMove;
+    private String timeLapsed="";
+    private double value=0;
 
     public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator){
-        //this.boardEvaluator= new StandardBoardEvaluator();
         this.boardEvaluator=boardEvaluator;
         this.searchDepth=searchDepth;
     }
@@ -25,6 +27,7 @@ public class MiniMax implements MoveStrategy{
         int highestSeenValue=Integer.MIN_VALUE;
         int lowestSeenValue=Integer.MAX_VALUE;
         int currentValue;
+        int lastValue=0;
 
         System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator);
 
@@ -40,25 +43,49 @@ public class MiniMax implements MoveStrategy{
 
                 if(board.currentPlayer().getAlliance().isWhite() && currentValue>= highestSeenValue){
                     highestSeenValue=currentValue;
+                    lastValue=currentValue;
                     bestMove=move;
                     System.out.println("Best move is "+bestMove+" - value "+highestSeenValue +
                             "\t Computation took "+(System.currentTimeMillis()-inLoopTime)+" ms"+
                             "\t Total time: "+(System.currentTimeMillis()-startTime)+" ms");
+                    setStatus(bestMove,highestSeenValue,System.currentTimeMillis()-startTime);
                     inLoopTime=System.currentTimeMillis();
                 }
                 else if(board.currentPlayer().getAlliance().isBlack() && currentValue<=lowestSeenValue){
                     lowestSeenValue=currentValue;
+                    lastValue=currentValue;
                     bestMove=move;
                     System.out.println("Best move is "+bestMove+" - value "+lowestSeenValue +
                             "\t Computation took "+(System.currentTimeMillis()-inLoopTime)+" ms"+
                             "\t Total time: "+(System.currentTimeMillis()-startTime)+" ms");
+                    setStatus(bestMove,lowestSeenValue,System.currentTimeMillis()-startTime);
                     inLoopTime=System.currentTimeMillis();
                 }
             }
         }
         final long executionTime=System.currentTimeMillis()-startTime;
         System.out.println("Took "+executionTime + " milliseconds");
+        setStatus(bestMove,lastValue,executionTime);
         return bestMove;
+    }
+
+    @Override
+    public void setStatus(Move bestMove, int lastValue, long executionTime) {
+        this.suggestedMove=bestMove;
+        this.value=lastValue/100;
+        this.timeLapsed=executionTime/1000+"s + "+executionTime%1000 +" ms";
+    }
+
+    public double getValue(){
+        return this.value;
+    }
+
+    public String getTimeLapsed(){
+        return this.timeLapsed;
+    }
+
+    public Move getSuggestedMove(){
+        return this.suggestedMove;
     }
 
     @Override

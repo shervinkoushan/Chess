@@ -75,7 +75,7 @@ class GameSetup extends JDialog {
             }
         });
 
-        this.whiteSearchDepthSpinner = addLabeledSpinner(myPanel, "White Search Depth", new SpinnerNumberModel(4, 0, Integer.MAX_VALUE, 1));
+        this.whiteSearchDepthSpinner = addLabeledSpinner(myPanel, "White Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
 
 
         final ButtonGroup blackGroup = new ButtonGroup();
@@ -109,7 +109,7 @@ class GameSetup extends JDialog {
             }
         });
 
-        this.blackSearchDepthSpinner = addLabeledSpinner(myPanel, "Black Search Depth", new SpinnerNumberModel(4, 0, Integer.MAX_VALUE, 1));
+        this.blackSearchDepthSpinner = addLabeledSpinner(myPanel, "Black Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
 
         final JButton cancelButton = new JButton("Cancel");
         final JButton okButton = new JButton("OK");
