@@ -15,15 +15,33 @@ import static com.chess.engine.board.Move.*;
 public class King extends Piece {
     private final static int[] CANDIDATE_MOVE_COORDINATES={-9,-8,-7,-1,1,7,8,9};
     private static final Set<Integer> EDGE_COORDINATES = new HashSet<Integer>(Arrays.asList(-9,-1,7));
+    private final boolean queenSideCastleCapable;
+    private final boolean kingSideCastleCapable;
+    private final boolean isCastled;
 
-
-    public King(final int piecePosition, final Alliance pieceAlliance) {
-        super(PieceType.KING ,piecePosition, pieceAlliance, true);
+    public King(final int piecePosition,
+                final Alliance alliance,
+                final boolean kingSideCastleCapable,
+                final boolean queenSideCastleCapable) {
+        super(PieceType.KING, piecePosition, alliance, true);
+        this.isCastled = false;
+        this.kingSideCastleCapable = kingSideCastleCapable;
+        this.queenSideCastleCapable = queenSideCastleCapable;
     }
 
-    public King(final int piecePosition, final Alliance pieceAlliance, final boolean isFirstMove) {
-        super(PieceType.KING ,piecePosition, pieceAlliance, isFirstMove);
+    public King(final int piecePosition,
+                final Alliance alliance,
+                final boolean isFirstMove,
+                final boolean isCastled,
+                final boolean kingSideCastleCapable,
+                final boolean queenSideCastleCapable) {
+        super(PieceType.KING, piecePosition, alliance, isFirstMove);
+        this.isCastled = isCastled;
+        this.kingSideCastleCapable = kingSideCastleCapable;
+        this.queenSideCastleCapable = queenSideCastleCapable;
     }
+
+
 
     @Override
     public Collection<Move> calculateLegalMoves(Board board) {
@@ -55,6 +73,14 @@ public class King extends Piece {
 
     @Override
     public King movePiece(final Move move) {
-        return new King(move.getDestinationCoordinate(),move.getMovedPiece().getPieceAlliance(),false);
+        return new King(move.getDestinationCoordinate(),move.getMovedPiece().getPieceAlliance(),false,move.isCastlingMove(),false,false);
+    }
+
+    public boolean isKingSideCastleCapable() {
+        return this.kingSideCastleCapable;
+    }
+
+    public boolean isQueenSideCastleCapable() {
+        return this.queenSideCastleCapable;
     }
 }

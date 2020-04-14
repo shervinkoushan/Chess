@@ -37,6 +37,28 @@ public class WhitePlayer extends Player{
     }
 
     @Override
+    public boolean isKingSideCastleCapable() {
+        if(this.board.getTile(63).getPiece()!=null){
+            return this.playerKing.isKingSideCastleCapable() &&
+                    this.board.getTile(63).getPiece().getPieceType()==ROOK &&
+                    this.board.getTile(63).getPiece().getPieceAlliance()==Alliance.WHITE &&
+                    this.board.getTile(63).getPiece().isFirstMove();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isQueenSideCastleCapable() {
+        if(this.board.getTile(56).getPiece()!=null){
+            return this.playerKing.isQueenSideCastleCapable() &&
+                    this.board.getTile(56).getPiece().getPieceType()==ROOK &&
+                    this.board.getTile(56).getPiece().getPieceAlliance()==Alliance.WHITE &&
+                    this.board.getTile(56).getPiece().isFirstMove();
+        }
+        return false;
+    }
+
+    @Override
     public String toString(){
         return "Whiteplayer";
     }

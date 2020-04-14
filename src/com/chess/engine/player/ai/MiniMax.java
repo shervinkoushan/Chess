@@ -54,9 +54,6 @@ public class MiniMax implements MoveStrategy{
                             "\t Total time: "+(System.currentTimeMillis()-startTime)+" ms");
                     inLoopTime=System.currentTimeMillis();
                 }
-                /*numMoves--;
-                System.out.println(numMoves+" moves left to analyze. Best move so far is "+bestMove+" with value "+
-                        (board.currentPlayer().getAlliance().isBlack() ? lowestSeenValue : highestSeenValue) );*/
             }
         }
         final long executionTime=System.currentTimeMillis()-startTime;

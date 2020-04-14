@@ -28,6 +28,28 @@ public class BlackPlayer extends Player{
     }
 
     @Override
+    public boolean isKingSideCastleCapable() {
+        if(this.board.getTile(7).getPiece()!=null){
+            return this.playerKing.isKingSideCastleCapable() &&
+                    this.board.getTile(7).getPiece().getPieceType()==ROOK &&
+                    this.board.getTile(7).getPiece().getPieceAlliance()==Alliance.BLACK &&
+                    this.board.getTile(7).getPiece().isFirstMove();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isQueenSideCastleCapable() {
+        if(this.board.getTile(0).getPiece()!=null){
+            return this.playerKing.isQueenSideCastleCapable() &&
+                    this.board.getTile(0).getPiece().getPieceType()==ROOK &&
+                    this.board.getTile(0).getPiece().getPieceAlliance()==Alliance.BLACK &&
+                    this.board.getTile(0).getPiece().isFirstMove();
+        }
+      return false;
+    }
+
+    @Override
     public Alliance getAlliance() {
         return Alliance.BLACK;
     }

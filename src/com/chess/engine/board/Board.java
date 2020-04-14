@@ -122,7 +122,7 @@ public class Board {
         builder.setPiece(new Bishop(2,Alliance.BLACK));
         builder.setPiece(new Bishop(5,Alliance.BLACK));
         builder.setPiece(new Queen(3,Alliance.BLACK));
-        builder.setPiece(new King(4,Alliance.BLACK));
+        builder.setPiece(new King(4,Alliance.BLACK,true,true));
         for(int i=8;i<16;i++){
             builder.setPiece(new Pawn(i,Alliance.BLACK));
         }
@@ -134,7 +134,7 @@ public class Board {
         builder.setPiece(new Bishop(58,Alliance.WHITE));
         builder.setPiece(new Bishop(61,Alliance.WHITE));
         builder.setPiece(new Queen(59,Alliance.WHITE));
-        builder.setPiece(new King(60,Alliance.WHITE));
+        builder.setPiece(new King(60,Alliance.WHITE,true,true));
         for(int i=48;i<56;i++){
             builder.setPiece(new Pawn(i,Alliance.WHITE));
         }

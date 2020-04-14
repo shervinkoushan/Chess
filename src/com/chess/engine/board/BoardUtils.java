@@ -76,7 +76,6 @@ public class BoardUtils {
         return WHITE_POSITIONS.contains(coordinate);
     }
 
-
     public static boolean sameColor(final int coordinate, final int coordinate2){
         return isWhite(coordinate) == isWhite(coordinate2);
     }

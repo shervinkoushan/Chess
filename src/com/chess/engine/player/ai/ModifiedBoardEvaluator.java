@@ -1,6 +1,8 @@
 package com.chess.engine.player.ai;
 
 import com.chess.engine.board.Board;
+import com.chess.engine.board.BoardUtils;
+import com.chess.engine.board.Move;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.player.Player;
 
@@ -15,14 +17,16 @@ public final class ModifiedBoardEvaluator implements BoardEvaluator {
     private static final int DEPTH_BONUS=100;
     private static final int CASTLE_BONUS=60;
     private static final int MOBILITY_BONUS=30;
+    private static final int PAWN_ADVANCED_BONUS = 2;
+    private static final int ATTACK_BONUS = 10;
+    private static final int CAN_CASTLE_BONUS =5;
 
-    private static Map<Piece.PieceType,Integer> pieceValues=Map.of(PAWN, 100, KNIGHT,300, BISHOP, 350,ROOK,500,QUEEN,900,KING, 10000);
+    private static Map<Piece.PieceType,Integer> pieceValues=Map.of(PAWN, 100, KNIGHT,300, BISHOP, 300,ROOK,500,QUEEN,900,KING, 10000);
 
     @Override
     public String toString(){
         return "Modified Board Evaluator";
     }
-
 
     @Override
     public int evaluate(final Board board, final int depth) {
@@ -34,7 +38,39 @@ public final class ModifiedBoardEvaluator implements BoardEvaluator {
         /*if(player.getOpponent().isInStaleMate() || player.isInStaleMate()){
             return 0;
         }*/
-        return pieceValue(player) + mobility(player) + check(player) + checkMate(player,depth) + castled(player);
+        return pieceValue(player) + mobility(player) + check(player) + checkMate(player,depth) +
+                castled(player)+pawnAdvancement(player)+attacking(player)+canCastle(player);
+    }
+
+    private int canCastle(Player player) {
+        if(player.isCastled()){
+            return CAN_CASTLE_BONUS*2;
+        }
+        else{
+            return (player.isKingSideCastleCapable() ? CAN_CASTLE_BONUS : 0) +
+                    (player.isQueenSideCastleCapable() ? CAN_CASTLE_BONUS : 0);
+        }
+    }
+
+    private int attacking(Player player) {
+        int attackSum=0;
+        for(final Move move:player.getLegalMoves()){
+            if(move.isAttack()){
+                attackSum+=ATTACK_BONUS;
+            }
+        }
+        return attackSum;
+    }
+
+
+    private int pawnAdvancement(Player player) {
+        int pawnReward=0;
+        for(final Piece piece : player.getActivePieces()){
+            if(piece.getPieceType()==PAWN){
+                pawnReward+=player.getOpponent().getAlliance().getDirection()*BoardUtils.getRow(piece.getPiecePosition())*PAWN_ADVANCED_BONUS;
+            }
+        }
+        return pawnReward;
     }
 
     private static int mobility(Player player){

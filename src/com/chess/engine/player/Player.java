@@ -21,13 +21,11 @@ public abstract class Player {
     protected final King playerKing;
     protected final Collection<Move> legalMoves;
     private final boolean isInCheck;
-    private boolean isKingSideCastleCapable;
-    private boolean isQueenSideCastleCapable;
 
     Player(final Board board, final Collection<Move> legalMoves, final Collection <Move> opponentMoves){
         this.board=board;
         this.playerKing=establishKing();
-        this.legalMoves=ImmutableList.copyOf(Iterables.concat(legalMoves,calculateKingCastles(legalMoves,opponentMoves)));
+        this.legalMoves=ImmutableList.copyOf(Iterables.concat(legalMoves,calculateKingCastles(opponentMoves)));
         this.isInCheck=!Player.calculateAttacksOnTile(this.playerKing.getPiecePosition(),opponentMoves).isEmpty();
     }
 
@@ -108,12 +106,10 @@ public abstract class Player {
     public abstract Alliance getAlliance();
     public abstract Player getOpponent();
 
-    protected Collection<Move> calculateKingCastles(final Collection<Move> playerLegals, final Collection<Move> opponentLegals) {
+    protected Collection<Move> calculateKingCastles(final Collection<Move> opponentLegals) {
         final List<Move> kingCastles = new ArrayList<>();
         final int offset=this.getAlliance().isWhite() ? 56 : 0;
 
-        this.isKingSideCastleCapable=false;
-        this.isQueenSideCastleCapable=false;
         if(this.playerKing.isFirstMove() && this.playerKing.getPiecePosition() == (4+offset) && !this.isInCheck()){
             if(!this.board.getTile(5+offset).isTileOccupied() && !this.board.getTile(6+offset).isTileOccupied()){
                 final Tile rookTile=this.board.getTile(7+offset);
@@ -123,7 +119,6 @@ public abstract class Player {
                             rookTile.getPiece().getPieceType()== ROOK){
                         kingCastles.add(new Move.KingSideCastleMove(this.board,this.playerKing,6+offset,
                                 (Rook)rookTile.getPiece(),rookTile.getTileCoordinate(),5+offset));
-                        this.isKingSideCastleCapable=true;
                     }
                 }
             }
@@ -138,7 +133,6 @@ public abstract class Player {
                             rookTile.getPiece().getPieceType()== ROOK){
                         kingCastles.add(new Move.QueenSideCastleMove(this.board,this.playerKing,2+offset,
                                 (Rook)rookTile.getPiece(),rookTile.getTileCoordinate(),3+offset));
-                        this.isQueenSideCastleCapable=true;
                     }
                 }
             }
@@ -147,11 +141,7 @@ public abstract class Player {
         return ImmutableList.copyOf(kingCastles);
     }
 
-    public boolean isKingSideCastleCapable() {
-        return this.isKingSideCastleCapable;
-    }
+    public abstract boolean isKingSideCastleCapable();
 
-    public boolean isQueenSideCastleCapable() {
-        return this.isQueenSideCastleCapable;
-    }
+    public abstract boolean isQueenSideCastleCapable();
 }

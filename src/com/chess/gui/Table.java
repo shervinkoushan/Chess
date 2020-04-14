@@ -40,6 +40,7 @@ public class Table extends Observable {
     private final MoveLog moveLog;
     private final GameSetup gameSetup;
     private Move computerMove;
+    private Collection<String> gameHistory;
 
     private Tile sourceTile;
     private Tile destinationTile;
@@ -57,6 +58,7 @@ public class Table extends Observable {
 
     private static final Table INSTANCE=new Table();
 
+
     private Table(){
         this.gameFrame=new JFrame("JChess");
         this.gameFrame.setLayout(new BorderLayout());
@@ -65,7 +67,8 @@ public class Table extends Observable {
         this.gameFrame.setSize(OUTER_FRAME_DIMENSION);
         this.gameHistoryPanel=new GameHistoryPanel();
         this.takenPiecesPanel=new TakenPiecesPanel();
-        this.chessBoard=Board.createStandardBoard();
+        //this.chessBoard=Board.createStandardBoard();
+        this.chessBoard=FenUtilities.createGameFromFEN("rnbq1b1r/ppppkppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b - -  0 1");
         this.boardPanel=new BoardPanel();
         this.moveLog=new MoveLog();
         this.addObserver(new TableGameAIWatcher());
@@ -147,7 +150,7 @@ public class Table extends Observable {
     }
 
     private void moveMadeUpdate(final PlayerType playerType) {
-        //System.out.println(FenUtilities.createFENFromGame(Table.get().getGameBoard()));
+        gameHistory.add(FenUtilities.createFENFromGame(Table.get().getGameBoard()));
         setChanged();
         notifyObservers(playerType);
     }
@@ -394,9 +397,7 @@ public class Table extends Observable {
                             if(transition.getMoveStatus().isDone()){
                                 chessBoard=transition.getTransitionBoard();
                                 moveLog.addMove(move);
-                                /*for(Move mv: chessBoard.currentPlayer().getLegalMoves()){
-                                    System.out.println(mv);
-                                }*/
+                                Table.get().moveMadeUpdate(PlayerType.HUMAN);
                             }
                             sourceTile=null;
                             destinationTile=null;
@@ -408,9 +409,6 @@ public class Table extends Observable {
                         public void run() {
                             gameHistoryPanel.redo(chessBoard,moveLog);
                             takenPiecesPanel.redo(moveLog);
-                            if(gameSetup.isAIPlayer(chessBoard.currentPlayer())){
-                                Table.get().moveMadeUpdate(PlayerType.HUMAN);
-                            }
                             boardPanel.drawBoard(chessBoard);
                         }
                     });
