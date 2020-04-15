@@ -1,8 +1,11 @@
 package com.chess.engine.board;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import com.chess.engine.pieces.Piece;
+import com.chess.engine.player.MoveTransition;
+
+import java.util.*;
+
+import static com.chess.engine.board.Move.*;
 
 public class BoardUtils {
     private BoardUtils(){
@@ -78,5 +81,37 @@ public class BoardUtils {
 
     public static boolean sameColor(final int coordinate, final int coordinate2){
         return isWhite(coordinate) == isWhite(coordinate2);
+    }
+
+    public static int mvvlva(final Move move) {
+        final Piece movingPiece = move.getMovedPiece();
+        if(move.isAttack()) {
+            final Piece attackedPiece = move.getAttackedPiece();
+            return (attackedPiece.getPieceValue() - movingPiece.getPieceValue() +  Piece.PieceType.KING.getPieceValue()) * 100;
+        }
+        return Piece.PieceType.KING.getPieceValue() - movingPiece.getPieceValue();
+    }
+
+    public static boolean kingThreat(final Move move) {
+        final Board board = move.getBoard();
+        final MoveTransition transition = board.currentPlayer().makeMove(move);
+        return transition.getTransitionBoard().currentPlayer().isInCheck();
+    }
+
+    public static boolean isEndGame(final Board board) {
+        return board.currentPlayer().isInCheckMate() ||
+                board.currentPlayer().isInStaleMate();
+    }
+
+    public static List<Move> lastNMoves(final Board board, int N) {
+        final List<Move> moveHistory = new ArrayList<>();
+        Move currentMove = board.getTransitionMove();
+        int i = 0;
+        while(currentMove != MoveFactory.getNullMove() && i < N) {
+            moveHistory.add(currentMove);
+            currentMove = currentMove.getBoard().getTransitionMove();
+            i++;
+        }
+        return Collections.unmodifiableList(moveHistory);
     }
 }

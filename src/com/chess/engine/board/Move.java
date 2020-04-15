@@ -37,6 +37,7 @@ public abstract class Move {
         result=prime*result+this.destinationCoordinate;
         result=prime*result+this.movedPiece.hashCode();
         result=prime*result+this.movedPiece.getPiecePosition();
+        result=result+(isFirstMove ? 1 : 0);
         return result;
     }
 
@@ -481,6 +482,11 @@ public abstract class Move {
         private MoveFactory(){
             throw new RuntimeException("Not instantiable!");
         }
+
+        public static Move getNullMove(){
+            return NULL_MOVE;
+        }
+
         public static Move createMove(final Board board, final int currentCoordinate, final int destinationCoordinate){
             for(final Move move:board.getAllLegalMoves()){
                 if(move.getCurrentCoordinate()==currentCoordinate && move.getDestinationCoordinate()==destinationCoordinate){

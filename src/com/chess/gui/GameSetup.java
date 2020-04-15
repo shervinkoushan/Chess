@@ -2,9 +2,7 @@ package com.chess.gui;
 
 import com.chess.engine.Alliance;
 import com.chess.engine.player.Player;
-import com.chess.engine.player.ai.BoardEvaluator;
-import com.chess.engine.player.ai.ModifiedBoardEvaluator;
-import com.chess.engine.player.ai.StandardBoardEvaluator;
+import com.chess.engine.player.ai.*;
 import com.chess.gui.Table.PlayerType;
 
 import javax.swing.*;
@@ -25,6 +23,8 @@ class GameSetup extends JDialog {
     private BoardEvaluator whiteBoardEvaluator=new StandardBoardEvaluator();
     private BoardEvaluator blackBoardEvaluator=new StandardBoardEvaluator();
 
+    String whiteEngine="Alpha Beta";
+    String blackEngine="Alpha Beta";
 
     private static final String HUMAN_TEXT = "Human";
     private static final String COMPUTER_TEXT = "Computer";
@@ -33,7 +33,6 @@ class GameSetup extends JDialog {
               final boolean modal) {
         super(frame, modal);
         final JPanel myPanel = new JPanel();
-        //myPanel.setLayout(new BoxLayout(myPanel,BoxLayout.PAGE_AXIS));
         myPanel.setLayout(new GridLayout(0,1));
         final JRadioButton whiteHumanButton = new JRadioButton(HUMAN_TEXT);
         final JRadioButton whiteComputerButton = new JRadioButton(COMPUTER_TEXT);
@@ -51,6 +50,21 @@ class GameSetup extends JDialog {
         myPanel.add(whiteComputerButton);
 
         myPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        myPanel.add(new JLabel("White engine"));
+        String[] engineChoices = {"Alpha Beta", "Minimax"};
+        final JComboBox<String> engineCb = new JComboBox<String>(engineChoices);
+        engineCb.setSelectedIndex(0);
+        engineCb.setVisible(true);
+        myPanel.add(engineCb);
+
+        engineCb.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                JComboBox engineCb = (JComboBox) e.getSource();
+                whiteEngine = (String) engineCb.getSelectedItem();
+            }
+        });
 
         myPanel.add(new JLabel("White board evaluator"));
         String[] choices = {"Standard", "Modified"};
@@ -86,6 +100,20 @@ class GameSetup extends JDialog {
         myPanel.add(new JLabel("Black"));
         myPanel.add(blackHumanButton);
         myPanel.add(blackComputerButton);
+
+        myPanel.add(new JLabel("Black engine"));
+        final JComboBox<String> engineCb2 = new JComboBox<String>(engineChoices);
+        engineCb.setSelectedIndex(0);
+        engineCb.setVisible(true);
+        myPanel.add(engineCb2);
+
+        engineCb.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                JComboBox engineCb2 = (JComboBox) e.getSource();
+                blackEngine = (String) engineCb2.getSelectedItem();
+            }
+        });
 
         myPanel.add(new JLabel("Black board evaluator"));
         final JComboBox<String> cb2 = new JComboBox<String>(choices);
@@ -132,7 +160,7 @@ class GameSetup extends JDialog {
         myPanel.add(cancelButton);
         myPanel.add(okButton);
 
-        setLocationRelativeTo(frame);
+        //setLocationRelativeTo(frame);
         pack();
         setVisible(false);
         }
@@ -183,5 +211,13 @@ class GameSetup extends JDialog {
 
     BoardEvaluator getBlackBoardEvaluator(){
         return this.blackBoardEvaluator;
+    }
+
+    String getWhiteEngine(){
+        return this.whiteEngine;
+    }
+
+    String getBlackEngine(){
+        return this.blackEngine;
     }
 }

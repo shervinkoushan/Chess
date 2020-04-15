@@ -26,10 +26,10 @@ public abstract class Piece {
     }
 
     private int computeHashCode() {
-        int result = pieceType.hashCode();
-        result=31*result+pieceAlliance.hashCode();
-        result=31*result+piecePosition;
-        result=31*result + (isFirstMove ? 1:0);
+        int result = this.pieceType.hashCode();
+        result=31*result+this.pieceAlliance.hashCode();
+        result=31*result+this.piecePosition;
+        result=31*result + (this.isFirstMove ? 1:0);
         return result;
     }
 

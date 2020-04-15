@@ -15,4 +15,6 @@ public interface MoveStrategy {
     Move getSuggestedMove();
 
     boolean getExecutionFinished();
+
+    long getNumBoardsEvaluated();
 }

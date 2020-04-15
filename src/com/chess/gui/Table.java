@@ -6,18 +6,14 @@ import com.chess.engine.board.Move;
 import com.chess.engine.board.Tile;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.player.MoveTransition;
-import com.chess.engine.player.ai.MiniMax;
-import com.chess.engine.player.ai.MoveStrategy;
+import com.chess.engine.player.ai.*;
 import com.chess.pgn.FenUtilities;
 import com.google.common.collect.Lists;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +29,7 @@ public class Table extends Observable {
     private final TakenPiecesPanel takenPiecesPanel;
     private final BoardPanel boardPanel;
     private final LogPanel logPanel;
+    private final AnalyzePanel analyzePanel;
     private Board chessBoard;
     private BoardDirection boardDirection;
     private final MoveLog moveLog;
@@ -50,10 +47,11 @@ public class Table extends Observable {
 
     private boolean highlightLegals;
 
-    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,630);
+    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,720);
     private final static Dimension BOARD_PANEL_DIMENSION=new Dimension(400,350);
     private final static Dimension TILE_PANEL_DIMENSION=new Dimension(10,10);
     private final static Dimension LOG_PANEL_DIMENSION =new Dimension(400,30);
+    private final static Dimension ANALYZE_PANEL_DIMENSION =new Dimension(400,50);
     private final static String defaultPieceImagePath="art/pieces/plain/";
     private final static String startingFEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -80,11 +78,13 @@ public class Table extends Observable {
         this.highlightLegals=true;
         this.boardDirection=BoardDirection.NORMAL;
         this.gameSetup=new GameSetup(this.gameFrame,true);
+        this.analyzePanel=new AnalyzePanel();
 
         this.gameFrame.add(this.takenPiecesPanel,BorderLayout.WEST);
         this.gameFrame.add(this.gameHistoryPanel,BorderLayout.EAST);
         this.gameFrame.add(this.boardPanel,BorderLayout.CENTER);
         this.gameFrame.add(this.logPanel,BorderLayout.SOUTH);
+        this.gameFrame.add(this.analyzePanel,BorderLayout.NORTH);
 
         this.gameFrame.setVisible(true);
     }
@@ -139,15 +139,25 @@ public class Table extends Observable {
 
         @Override
         protected Move doInBackground() throws Exception{
-            final MoveStrategy miniMax;
+            final MoveStrategy engine;
             if(Table.get().getGameBoard().currentPlayer().getAlliance().isWhite()){
-                miniMax=new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth(),Table.get().getGameSetup().getWhiteBoardEvaluator());
+                if(Table.get().getGameSetup().getWhiteEngine().equals("Alpha Beta")){
+                    engine=new StockAlphaBeta(Table.get().getGameSetup().getWhiteSearchDepth(),Table.get().getGameSetup().getWhiteBoardEvaluator());
+                }
+                else{
+                    engine=new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth(),Table.get().getGameSetup().getWhiteBoardEvaluator());
+                }
             }
             else{
-                miniMax=new MiniMax(Table.get().getGameSetup().getBlackSearchDepth(),Table.get().getGameSetup().getBlackBoardEvaluator());
+                if(Table.get().getGameSetup().getBlackEngine().equals("Alpha Beta")){
+                    engine=new StockAlphaBeta(Table.get().getGameSetup().getBlackSearchDepth(),Table.get().getGameSetup().getBlackBoardEvaluator());
+                }
+                else{
+                    engine=new MiniMax(Table.get().getGameSetup().getBlackSearchDepth(),Table.get().getGameSetup().getBlackBoardEvaluator());
+                }
             }
 
-            final Move bestMove=miniMax.execute(Table.get().getGameBoard());
+            final Move bestMove=engine.execute(Table.get().getGameBoard());
 
             return bestMove;
         }
@@ -675,4 +685,92 @@ public class Table extends Observable {
         }
     }
 
+    private class AnalyzePanel extends JPanel{
+        final JButton analyzeBtn=new JButton("Analyze");
+        final JLabel evaluation=new JLabel("0.0");
+        final JLabel bestMove=new JLabel("");
+        final JLabel timeLapsed=new JLabel("");
+        JSpinner depthSpinner;
+        String[] boardEvaluatorChoices = {"Standard", "Modified"};
+        String[] aiChoices={"Alpha Beta","Minimax"};
+        final JComboBox<String> cb = new JComboBox<String>(boardEvaluatorChoices);
+        final JComboBox<String> cb2 = new JComboBox<String>(aiChoices);
+        BoardEvaluator boardEvaluator=new StandardBoardEvaluator();
+        String chosenEngine="Alpha Beta";
+        MoveStrategy engine=new StockAlphaBeta(4,boardEvaluator);
+
+        AnalyzePanel(){
+            super(new GridLayout(2,0));
+
+            this.depthSpinner = addLabeledSpinner(this, "Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
+
+            cb2.setSelectedIndex(0);
+            cb2.setVisible(true);
+            add(cb2);
+
+            cb2.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    JComboBox cb2 = (JComboBox) e.getSource();
+                    chosenEngine = (String) cb2.getSelectedItem();
+                }
+            });
+
+            cb.setSelectedIndex(0);
+            cb.setVisible(true);
+            add(cb);
+
+            cb.addItemListener(new ItemListener() {
+                @Override
+                public void itemStateChanged(ItemEvent e) {
+                    JComboBox cb = (JComboBox) e.getSource();
+                    String chosenEvaluator = (String) cb.getSelectedItem();
+                    switch(chosenEvaluator){
+                        case "Standard":
+                            boardEvaluator = new StandardBoardEvaluator();
+                            break;
+                        case "Modified":
+                            boardEvaluator = new ModifiedBoardEvaluator();
+                            break;
+                    }
+                }
+            });
+
+            add(analyzeBtn);
+            add(evaluation);
+            add(bestMove);
+            add(timeLapsed);
+            analyzeBtn.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e){
+                    switch(chosenEngine){
+                        case "Alpha Beta":
+                            engine = new StockAlphaBeta((Integer) depthSpinner.getValue(),boardEvaluator);
+                            break;
+                        case "Minimax":
+                            engine = new MiniMax((Integer) depthSpinner.getValue(),boardEvaluator);
+                            break;
+                    }
+                    engine.execute(Table.get().getGameBoard());
+                    evaluation.setText("Evaluation: "+engine.getValue());
+                    bestMove.setText("Best move: "+engine.getSuggestedMove().toString());
+                    timeLapsed.setText("Time lapsed: "+engine.getTimeLapsed());
+                }
+                });
+
+            setPreferredSize(ANALYZE_PANEL_DIMENSION);
+            validate();
+        }
+
+        private JSpinner addLabeledSpinner(final Container c,
+                                                  final String label,
+                                                  final SpinnerModel model) {
+            final JLabel l = new JLabel(label);
+            c.add(l);
+            final JSpinner spinner = new JSpinner(model);
+            l.setLabelFor(spinner);
+            c.add(spinner);
+            return spinner;
+        }
+    }
 }

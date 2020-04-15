@@ -76,7 +76,13 @@ public class MiniMax implements MoveStrategy{
     public void setStatus(Move bestMove, int lastValue, long executionTime) {
         this.suggestedMove=bestMove;
         this.value=((double) lastValue) /100;
-        this.timeLapsed=executionTime/1000+"s + "+executionTime%1000 +" ms";
+        double s=executionTime/1000;
+        if(s>0){
+            this.timeLapsed=executionTime/1000+"s, "+executionTime%1000 +"ms";
+        }
+        else{
+            this.timeLapsed=executionTime%1000 +" ms";
+        }
     }
 
     public double getValue(){
@@ -94,6 +100,11 @@ public class MiniMax implements MoveStrategy{
     @Override
     public boolean getExecutionFinished() {
         return this.executionFinished;
+    }
+
+    @Override
+    public long getNumBoardsEvaluated() {
+        return 0;
     }
 
     @Override
