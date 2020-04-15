@@ -10,6 +10,7 @@ public class MiniMax implements MoveStrategy{
     private Move suggestedMove;
     private String timeLapsed="";
     private double value=0;
+    private boolean executionFinished=false;
 
     public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator){
         this.boardEvaluator=boardEvaluator;
@@ -22,6 +23,7 @@ public class MiniMax implements MoveStrategy{
 
     @Override
     public Move execute(Board board) {
+        this.executionFinished=false;
         final long startTime=System.currentTimeMillis();
         Move bestMove=null;
         int highestSeenValue=Integer.MIN_VALUE;
@@ -66,13 +68,14 @@ public class MiniMax implements MoveStrategy{
         final long executionTime=System.currentTimeMillis()-startTime;
         System.out.println("Took "+executionTime + " milliseconds");
         setStatus(bestMove,lastValue,executionTime);
+        this.executionFinished=true;
         return bestMove;
     }
 
     @Override
     public void setStatus(Move bestMove, int lastValue, long executionTime) {
         this.suggestedMove=bestMove;
-        this.value=lastValue/100;
+        this.value=((double) lastValue) /100;
         this.timeLapsed=executionTime/1000+"s + "+executionTime%1000 +" ms";
     }
 
@@ -86,6 +89,11 @@ public class MiniMax implements MoveStrategy{
 
     public Move getSuggestedMove(){
         return this.suggestedMove;
+    }
+
+    @Override
+    public boolean getExecutionFinished() {
+        return this.executionFinished;
     }
 
     @Override

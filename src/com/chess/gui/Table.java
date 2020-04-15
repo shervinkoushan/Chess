@@ -9,6 +9,7 @@ import com.chess.engine.player.MoveStatus;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.Player;
 import com.chess.engine.player.ai.MiniMax;
+import com.chess.engine.player.ai.ModifiedBoardEvaluator;
 import com.chess.engine.player.ai.MoveStrategy;
 import com.chess.engine.player.ai.StandardBoardEvaluator;
 import com.chess.pgn.FenUtilities;
@@ -17,11 +18,9 @@ import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -44,17 +43,20 @@ public class Table extends Observable {
     private Move computerMove;
     private List<String> gameHistory=new ArrayList<>();
 
+    private boolean engineStop=true;
+
     private Tile sourceTile;
     private Tile destinationTile;
     private Piece humanMovedPiece;
 
     private boolean highlightLegals;
 
-    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,600);
+    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,630);
     private final static Dimension BOARD_PANEL_DIMENSION=new Dimension(400,350);
     private final static Dimension TILE_PANEL_DIMENSION=new Dimension(10,10);
     private static final Dimension LOG_PANEL_DIMENSION =new Dimension(400,30);
     private static String defaultPieceImagePath="art/pieces/plain/";
+    private static String startingFEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     private final Color LIGHT_TILE_COLOR = Color.decode("#EDD0A7");
     private final Color DARK_TILE_COLOR = Color.decode("#7D5E49");
@@ -70,8 +72,7 @@ public class Table extends Observable {
         this.gameHistoryPanel=new GameHistoryPanel();
         this.takenPiecesPanel=new TakenPiecesPanel();
         this.chessBoard=Board.createStandardBoard();
-        this.gameHistory.add("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-        //this.chessBoard=FenUtilities.createGameFromFEN("rnbq1b1r/ppppkppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b - -  0 1");
+        this.gameHistory.add(startingFEN);
         this.boardPanel=new BoardPanel();
         this.logPanel=new LogPanel();
         this.moveLog=new MoveLog();
@@ -125,7 +126,6 @@ public class Table extends Observable {
 
     private static class AIThinkTank extends SwingWorker<Move,String>{
         private AIThinkTank(){
-
         }
 
         @Override
@@ -168,6 +168,10 @@ public class Table extends Observable {
         notifyObservers(playerType);
     }
 
+    private LogPanel getLogPanel(){
+        return this.logPanel;
+    }
+
     private BoardPanel getBoardPanel() {
         return this.boardPanel;
     }
@@ -198,7 +202,8 @@ public class Table extends Observable {
         public void update(Observable o, Object arg) {
             if(Table.get().getGameSetup().isAIPlayer(Table.get().getGameBoard().currentPlayer()) &&
                     !Table.get().getGameBoard().currentPlayer().isInCheckMate() &&
-                    !Table.get().getGameBoard().currentPlayer().isInStaleMate()){
+                    !Table.get().getGameBoard().currentPlayer().isInStaleMate()  &&
+                    !Table.get().getStopped()){
                 //create an AI thread
                 //execute AI work
                 final AIThinkTank thinkTank=new AIThinkTank();
@@ -213,6 +218,10 @@ public class Table extends Observable {
         }
     }
 
+    private boolean getStopped() {
+        return this.engineStop;
+    }
+
     private JMenuBar createTableMenuBar() {
         final JMenuBar tableMenuBar= new JMenuBar();
         tableMenuBar.add(createFileMenu());
@@ -223,14 +232,27 @@ public class Table extends Observable {
 
     private JMenu createFileMenu() {
         final JMenu fileMenu=new JMenu("File");
-        final JMenuItem openPGN=new JMenuItem("Load PGN File");
-        openPGN.addActionListener(new ActionListener() {
+
+        final JMenuItem restartMenuItem = new JMenuItem("Restart");
+        restartMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("open up that pgn file!");
+                Table.get().setGameBoard(Board.createStandardBoard());
+                Table.get().getGameHistory().clear();
+                Table.get().getGameHistory().add(startingFEN);
+                Table.get().getLogPanel().stopButton.setText("Start");
+                engineStop=true;
+                invokeLater(new Runnable() {
+                    public void run() {
+                        Table.get().getMoveLog().clear();
+                        Table.get().getGameHistoryPanel().redo(chessBoard, Table.get().getMoveLog());
+                        Table.get().getTakenPiecesPanel().redo(Table.get().getMoveLog());
+                        Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
+                    }
+                });
             }
         });
-        fileMenu.add(openPGN);
+        fileMenu.add(restartMenuItem);
 
         final JMenuItem exitMenuItem = new JMenuItem("Exit");
         exitMenuItem.addActionListener(new ActionListener() {
@@ -242,6 +264,10 @@ public class Table extends Observable {
         fileMenu.add(exitMenuItem);
 
         return fileMenu;
+    }
+
+    private void setGameBoard(Board board) {
+        this.chessBoard=board;
     }
 
     private JMenu createPreferencesMenu(){
@@ -450,10 +476,35 @@ public class Table extends Observable {
         public void drawTile(final Board board){
             assignTileColor();
             assignTilePieceIcon(board);
+            highlightTileBorder(chessBoard);
             highlightLegalMoves(chessBoard);
+            highlightAIMove();
             validate();
             repaint();
         }
+
+        private void highlightTileBorder(final Board board) {
+            if(humanMovedPiece != null &&
+                    humanMovedPiece.getPieceAlliance() == board.currentPlayer().getAlliance() &&
+                    humanMovedPiece.getPiecePosition() == this.tileId) {
+                setBorder(BorderFactory.createLineBorder(Color.cyan));
+            } else {
+                setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            }
+        }
+
+        private void highlightAIMove() {
+            if(engineStop==false){
+                if(computerMove != null) {
+                    if(this.tileId == computerMove.getCurrentCoordinate()) {
+                        setBackground(Color.pink);
+                    } else if(this.tileId == computerMove.getDestinationCoordinate()) {
+                        setBackground(Color.red);
+                    }
+                }
+            }
+        }
+
 
         private void highlightLegalMoves(final Board board){
             if(highlightLegals){
@@ -509,15 +560,19 @@ public class Table extends Observable {
 
     private class LogPanel extends JPanel{
         final JButton backButton = new JButton("<");
-        final JButton stopButton = new JButton("Stop");
+        final JButton stopButton = new JButton("Start");
         final JButton forwardButton = new JButton(">");
-        MoveStrategy miniMax=new MiniMax(5,new StandardBoardEvaluator());
-        JLabel engineText=new JLabel();
+        final JButton openFEN = new JButton("Load FEN");
+        JTextField txtInput = new JTextField(startingFEN);
 
         LogPanel(){
             add(backButton);
             backButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    if(Table.get().getMoveLog().size()>0){
+                        Table.get().getMoveLog().removeMove(Table.get().getMoveLog().size()-1);
+                    }
+
                     List<String> pastBoards=Table.get().getGameHistory();
                     if(pastBoards.size()>1){
                         pastBoards.remove(pastBoards.size()-1);
@@ -535,14 +590,48 @@ public class Table extends Observable {
             });
 
             add(stopButton);
+
+            stopButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    List<String> pastBoards = Table.get().getGameHistory();
+                    if (engineStop && Table.get().getGameSetup().isAIPlayer(Table.get().getGameBoard().currentPlayer()) &&
+                            !Table.get().getGameBoard().currentPlayer().isInCheckMate() &&
+                            !Table.get().getGameBoard().currentPlayer().isInStaleMate()){
+                        engineStop=false;
+                        stopButton.setText("Stop");
+                        final AIThinkTank thinkTank=new AIThinkTank();
+                        thinkTank.execute();
+                    }
+                    else{
+                        engineStop=true;
+                        stopButton.setText("Start");
+                    }
+                    validate();
+                }
+            });
+
             add(forwardButton);
 
-            engineText.setText(""+miniMax.getValue());
-
-            add(engineText);
+            openFEN.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    System.out.println(txtInput.getText());
+                    Table.get().setGameBoard(FenUtilities.createGameFromFEN(txtInput.getText()));
+                    invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            gameHistoryPanel.redo(chessBoard,moveLog);
+                            takenPiecesPanel.redo(moveLog);
+                            boardPanel.drawBoard(chessBoard);
+                        }
+                    });}
+            });
+            add(openFEN);
+            add(txtInput);
 
             setPreferredSize(LOG_PANEL_DIMENSION);
             validate();
         }
     }
+
 }

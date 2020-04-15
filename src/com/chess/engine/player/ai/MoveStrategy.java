@@ -13,4 +13,6 @@ public interface MoveStrategy {
     String getTimeLapsed();
 
     Move getSuggestedMove();
+
+    boolean getExecutionFinished();
 }
