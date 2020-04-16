@@ -464,7 +464,7 @@ public abstract class Move {
 
     public static final class NullMove extends Move{
         public NullMove(){
-            super(null, 65);
+            super(null, -1);
         }
 
         @Override
@@ -475,6 +475,15 @@ public abstract class Move {
         @Override
         public int getCurrentCoordinate(){
             return -1;
+        }
+        @Override
+        public int getDestinationCoordinate() {
+            return -1;
+        }
+
+        @Override
+        public String toString() {
+            return "Null Move";
         }
     }
 

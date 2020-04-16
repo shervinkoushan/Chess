@@ -60,7 +60,7 @@ public class WhitePlayer extends Player{
 
     @Override
     public String toString(){
-        return "Whiteplayer";
+        return "White";
     }
 
 }

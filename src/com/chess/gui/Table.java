@@ -13,10 +13,11 @@ import com.google.common.collect.Lists;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -24,34 +25,36 @@ import java.util.concurrent.ExecutionException;
 import static javax.swing.SwingUtilities.*;
 
 public class Table extends Observable {
-    private final JFrame gameFrame;
+    private final JFrame gameFrame=new JFrame("JChess");
     private final GameHistoryPanel gameHistoryPanel;
     private final TakenPiecesPanel takenPiecesPanel;
     private final BoardPanel boardPanel;
     private final LogPanel logPanel;
     private final AnalyzePanel analyzePanel;
-    private Board chessBoard;
-    private BoardDirection boardDirection;
-    private final MoveLog moveLog;
-    private final MoveLog secondaryMoveLog;
+    private Board chessBoard=Board.createStandardBoard();
+    private BoardDirection boardDirection=BoardDirection.NORMAL;
+    private final MoveLog moveLog=new MoveLog();
+    private final MoveLog secondaryMoveLog=new MoveLog();
     private final GameSetup gameSetup;
     private Move computerMove;
+    private Move engineMove;
     private List<String> gameHistory=new ArrayList<>();
     private List<String> secondaryGameHistory=new ArrayList<>();
-
-    private boolean engineStop=true;
 
     private Tile sourceTile;
     private Tile destinationTile;
     private Piece humanMovedPiece;
 
-    private boolean highlightLegals;
+    private boolean highlightLegals=true;
+    private boolean engineOutput=true;
+    private boolean highlightEngineMoves=true;
+    private boolean engineStop=true;
 
-    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,720);
+    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,730);
     private final static Dimension BOARD_PANEL_DIMENSION=new Dimension(400,350);
     private final static Dimension TILE_PANEL_DIMENSION=new Dimension(10,10);
     private final static Dimension LOG_PANEL_DIMENSION =new Dimension(400,30);
-    private final static Dimension ANALYZE_PANEL_DIMENSION =new Dimension(400,50);
+    private final static Dimension ANALYZE_PANEL_DIMENSION =new Dimension(400,80);
     private final static String defaultPieceImagePath="art/pieces/plain/";
     private final static String startingFEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -61,31 +64,26 @@ public class Table extends Observable {
     private static final Table INSTANCE=new Table();
 
     private Table(){
-        this.gameFrame=new JFrame("JChess");
         this.gameFrame.setLayout(new BorderLayout());
+        this.gameFrame.setLocation(400,50);
+        this.gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.gameFrame.setResizable(false);
         final JMenuBar tableMenuBar=createTableMenuBar();
         this.gameFrame.setJMenuBar(tableMenuBar);
         this.gameFrame.setSize(OUTER_FRAME_DIMENSION);
-        this.gameHistoryPanel=new GameHistoryPanel();
-        this.takenPiecesPanel=new TakenPiecesPanel();
-        this.chessBoard=Board.createStandardBoard();
         this.gameHistory.add(startingFEN);
-        this.boardPanel=new BoardPanel();
-        this.logPanel=new LogPanel();
-        this.moveLog=new MoveLog();
-        this.secondaryMoveLog=new MoveLog();
         this.addObserver(new TableGameAIWatcher());
-        this.highlightLegals=true;
-        this.boardDirection=BoardDirection.NORMAL;
         this.gameSetup=new GameSetup(this.gameFrame,true);
-        this.analyzePanel=new AnalyzePanel();
-
+        this.boardPanel = new BoardPanel();
+        this.analyzePanel = new AnalyzePanel();
+        this.takenPiecesPanel = new TakenPiecesPanel();
+        this.gameHistoryPanel = new GameHistoryPanel();
+        this.logPanel = new LogPanel();
         this.gameFrame.add(this.takenPiecesPanel,BorderLayout.WEST);
         this.gameFrame.add(this.gameHistoryPanel,BorderLayout.EAST);
         this.gameFrame.add(this.boardPanel,BorderLayout.CENTER);
         this.gameFrame.add(this.logPanel,BorderLayout.SOUTH);
         this.gameFrame.add(this.analyzePanel,BorderLayout.NORTH);
-
         this.gameFrame.setVisible(true);
     }
 
@@ -185,6 +183,7 @@ public class Table extends Observable {
         Table.get().getGameHistory().add(FenUtilities.createFENFromGame(Table.get().getGameBoard()));
         Table.get().getSecondaryGameHistory().clear();
         Table.get().getSecondaryMoveLog().clear();
+        Table.get().updateEngineMove(null);
         setChanged();
         notifyObservers(playerType);
     }
@@ -195,6 +194,10 @@ public class Table extends Observable {
 
     private BoardPanel getBoardPanel() {
         return this.boardPanel;
+    }
+
+    private AnalyzePanel getAnalyzePanel() {
+        return this.analyzePanel;
     }
 
     private TakenPiecesPanel getTakenPiecesPanel() {
@@ -215,6 +218,10 @@ public class Table extends Observable {
 
     public void updateComputerMove(final Move move) {
         this.computerMove=move;
+    }
+
+    public void updateEngineMove(final Move move) {
+        this.engineMove=move;
     }
 
     public void updateGameBoard(final Board board) {
@@ -301,20 +308,61 @@ public class Table extends Observable {
             public void actionPerformed(ActionEvent e) {
                 boardDirection=boardDirection.opposite();
                 boardPanel.drawBoard(chessBoard);
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
             }
         });
         preferencesMenu.add(flipBoardMenuitem);
-
         preferencesMenu.addSeparator();
+
         final JCheckBoxMenuItem legalMoveHighlighterCheckbox=new JCheckBoxMenuItem("Highlight legal moves", true);
         legalMoveHighlighterCheckbox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 highlightLegals=legalMoveHighlighterCheckbox.isSelected();
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
+            }
+        });
+
+        final JCheckBoxMenuItem engineHighlighterCheckbox=new JCheckBoxMenuItem("Highlight engine moves", true);
+        engineHighlighterCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                highlightEngineMoves=engineHighlighterCheckbox.isSelected();
+                Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
+
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
+            }
+        });
+
+        final JCheckBoxMenuItem engineCheckbox=new JCheckBoxMenuItem("View engine output", true);
+        engineCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                engineOutput=engineCheckbox.isSelected();
+                Table.get().getAnalyzePanel().setOutPutStream();
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
             }
         });
 
         preferencesMenu.add(legalMoveHighlighterCheckbox);
+        preferencesMenu.add(engineHighlighterCheckbox);
+        preferencesMenu.add(engineCheckbox);
+
+        preferencesMenu.addSeparator();
+        final JMenuItem closeMenu=new JMenuItem("Close");
+        closeMenu.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                preferencesMenu.setPopupMenuVisible(false);
+                preferencesMenu.setSelected(false);
+            }
+        });
+        preferencesMenu.add(closeMenu);
+
         return preferencesMenu;
     }
 
@@ -515,8 +563,16 @@ public class Table extends Observable {
         }
 
         private void highlightAIMove() {
-            if(engineStop==false){
-                if(computerMove != null) {
+            if(highlightEngineMoves){
+                if(engineMove!=null){
+                    if(this.tileId == engineMove.getCurrentCoordinate()) {
+                        setBackground(Color.cyan);
+                    } else if(this.tileId == engineMove.getDestinationCoordinate()) {
+                        setBackground(Color.blue);
+                    }
+                }
+
+                if(!engineStop && computerMove != null) {
                     if(this.tileId == computerMove.getCurrentCoordinate()) {
                         setBackground(Color.pink);
                     } else if(this.tileId == computerMove.getDestinationCoordinate()) {
@@ -525,7 +581,6 @@ public class Table extends Observable {
                 }
             }
         }
-
 
         private void highlightLegalMoves(final Board board){
             if(highlightLegals){
@@ -584,12 +639,16 @@ public class Table extends Observable {
         final JButton stopButton = new JButton("Start");
         final JButton forwardButton = new JButton(">");
         final JButton openFEN = new JButton("Load FEN");
+        final JButton copyFEN = new JButton("Copy FEN");
         JTextField txtInput = new JTextField(startingFEN);
 
         LogPanel(){
             add(backButton);
             backButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    engineStop=true;
+                    stopButton.setText("Start");
+
                     if(Table.get().getMoveLog().size()>0){
                         int index=Table.get().getMoveLog().size()-1;
                         Table.get().getSecondaryMoveLog().addMove(Table.get().getMoveLog().getMoves().get(index));
@@ -636,6 +695,9 @@ public class Table extends Observable {
             add(forwardButton);
             forwardButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    engineStop=true;
+                    stopButton.setText("Start");
+
                     if(Table.get().getSecondaryMoveLog().size()>0){
                         int index=Table.get().getSecondaryMoveLog().size()-1;
                         Table.get().getMoveLog().addMove(Table.get().getSecondaryMoveLog().getMoves().get(index));
@@ -668,17 +730,32 @@ public class Table extends Observable {
                     Table.get().getSecondaryGameHistory().clear();
                     Table.get().updateGameBoard(FenUtilities.createGameFromFEN(txtInput.getText()));
                     Table.get().getGameHistory().add(txtInput.getText());
+                    engineStop=true;
+                    stopButton.setText("Start");
+
                     invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            gameHistoryPanel.redo(chessBoard,moveLog);
-                            takenPiecesPanel.redo(moveLog);
-                            boardPanel.drawBoard(chessBoard);
+                            Table.get().getGameHistoryPanel().redo(Table.get().getGameBoard(), Table.get().getMoveLog());
+                            Table.get().getTakenPiecesPanel().redo(Table.get().getMoveLog());
+                            Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
                         }
                     });}
             });
+
+            copyFEN.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String myString = FenUtilities.createFENFromGame(Table.get().getGameBoard());
+                    StringSelection stringSelection = new StringSelection(myString);
+                    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                    clipboard.setContents(stringSelection, null);
+                }
+                });
+
             add(openFEN);
             add(txtInput);
+            add(copyFEN);
 
             setPreferredSize(LOG_PANEL_DIMENSION);
             validate();
@@ -687,9 +764,6 @@ public class Table extends Observable {
 
     private class AnalyzePanel extends JPanel{
         final JButton analyzeBtn=new JButton("Analyze");
-        final JLabel evaluation=new JLabel("0.0");
-        final JLabel bestMove=new JLabel("");
-        final JLabel timeLapsed=new JLabel("");
         JSpinner depthSpinner;
         String[] boardEvaluatorChoices = {"Standard", "Modified"};
         String[] aiChoices={"Alpha Beta","Minimax"};
@@ -698,15 +772,22 @@ public class Table extends Observable {
         BoardEvaluator boardEvaluator=new StandardBoardEvaluator();
         String chosenEngine="Alpha Beta";
         MoveStrategy engine=new StockAlphaBeta(4,boardEvaluator);
+        JTextArea textArea = new JTextArea(2, 10);
+        TextAreaOutputStream taOutputStream = new TextAreaOutputStream(textArea);
+        String output="";
+        ByteArrayOutputStream newConsole = new ByteArrayOutputStream();
+        JScrollPane p=new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         AnalyzePanel(){
-            super(new GridLayout(2,0));
+            super(new BorderLayout());
 
-            this.depthSpinner = addLabeledSpinner(this, "Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
+            this.depthSpinner = addLabeledSpinner(this, "Search depth:", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
+            add(depthSpinner,BorderLayout.EAST);
 
             cb2.setSelectedIndex(0);
             cb2.setVisible(true);
-            add(cb2);
+            add(cb2,BorderLayout.WEST);
 
             cb2.addItemListener(new ItemListener() {
                 @Override
@@ -718,7 +799,7 @@ public class Table extends Observable {
 
             cb.setSelectedIndex(0);
             cb.setVisible(true);
-            add(cb);
+            add(cb,BorderLayout.CENTER);
 
             cb.addItemListener(new ItemListener() {
                 @Override
@@ -736,10 +817,7 @@ public class Table extends Observable {
                 }
             });
 
-            add(analyzeBtn);
-            add(evaluation);
-            add(bestMove);
-            add(timeLapsed);
+            add(analyzeBtn,BorderLayout.NORTH);
             analyzeBtn.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e){
@@ -751,15 +829,28 @@ public class Table extends Observable {
                             engine = new MiniMax((Integer) depthSpinner.getValue(),boardEvaluator);
                             break;
                     }
-                    engine.execute(Table.get().getGameBoard());
-                    evaluation.setText("Evaluation: "+engine.getValue());
-                    bestMove.setText("Best move: "+engine.getSuggestedMove().toString());
-                    timeLapsed.setText("Time lapsed: "+engine.getTimeLapsed());
+                    Engine e1=new Engine(engine);
+                    e1.execute();
                 }
                 });
 
+            add(p,BorderLayout.SOUTH);
+            setOutPutStream();
             setPreferredSize(ANALYZE_PANEL_DIMENSION);
             validate();
+        }
+
+        public void setOutPutStream(){
+            if(engineOutput){
+                textArea.setText(output+newConsole.toString().trim());
+                System.setOut(new PrintStream(taOutputStream));
+            }
+            else{
+                output=textArea.getText();
+
+                System.setOut(new PrintStream(newConsole));
+                textArea.setText("");
+            }
         }
 
         private JSpinner addLabeledSpinner(final Container c,
@@ -771,6 +862,30 @@ public class Table extends Observable {
             l.setLabelFor(spinner);
             c.add(spinner);
             return spinner;
+        }
+    }
+
+    private static class Engine extends SwingWorker<Move,String> {
+        final MoveStrategy engine;
+        public Engine(MoveStrategy engine) {
+            this.engine=engine;
+        }
+
+        @Override
+        protected Move doInBackground() throws Exception {
+            return engine.execute(Table.get().getGameBoard());
+        }
+
+        @Override
+        public void done(){
+            try {
+                Table.get().updateEngineMove(get());
+                Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

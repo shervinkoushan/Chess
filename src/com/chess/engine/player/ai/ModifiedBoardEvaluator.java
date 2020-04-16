@@ -13,11 +13,11 @@ import static com.chess.engine.pieces.Piece.PieceType.*;
 
 public final class ModifiedBoardEvaluator implements BoardEvaluator {
     private static final int CHECK_BONUS=50;
-    private static final int CHECKMATE_BONUS=10000;
+    private static final int CHECKMATE_BONUS=100000;
     private static final int DEPTH_BONUS=100;
     private static final int CASTLE_BONUS=60;
     private static final int MOBILITY_BONUS=30;
-    private static final int PAWN_ADVANCED_BONUS = 2;
+    private static final double PAWN_ADVANCED_BONUS = 1.5;
     private static final int ATTACK_BONUS = 10;
     private static final int CAN_CASTLE_BONUS =5;
 

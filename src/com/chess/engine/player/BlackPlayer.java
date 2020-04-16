@@ -61,7 +61,7 @@ public class BlackPlayer extends Player{
 
     @Override
     public String toString(){
-        return "Blackplayer";
+        return "Black";
     }
 }
 

@@ -14,7 +14,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
 class GameSetup extends JDialog {
-
     private PlayerType whitePlayerType;
     private PlayerType blackPlayerType;
     private JSpinner whiteSearchDepthSpinner;
@@ -160,7 +159,7 @@ class GameSetup extends JDialog {
         myPanel.add(cancelButton);
         myPanel.add(okButton);
 
-        //setLocationRelativeTo(frame);
+        setLocation(220,50);
         pack();
         setVisible(false);
         }

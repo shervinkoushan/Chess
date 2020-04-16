@@ -16,9 +16,7 @@ import static com.chess.engine.board.BoardUtils.mvvlva;
 import static com.chess.engine.board.Move.MoveFactory;
 
 public class StockAlphaBeta implements MoveStrategy {
-    private Move suggestedMove=new Move.NullMove();
     private final BoardEvaluator evaluator;
-    private int value=0;
     private final int searchDepth;
     private long boardsEvaluated;
     private long executionTime;
@@ -60,12 +58,7 @@ public class StockAlphaBeta implements MoveStrategy {
 
     @Override
     public String toString() {
-        return "StockAB";
-    }
-
-    @Override
-    public long getNumBoardsEvaluated() {
-        return this.boardsEvaluated;
+        return "Alpha Beta";
     }
 
     @Override
@@ -76,7 +69,7 @@ public class StockAlphaBeta implements MoveStrategy {
         int highestSeenValue = Integer.MIN_VALUE;
         int lowestSeenValue = Integer.MAX_VALUE;
         int currentValue;
-        int lastvalue=0;
+        int lastValue=0;
         System.out.println(board.currentPlayer() + " THINKING with depth = " + this.searchDepth);
         int moveCounter = 1;
         int numMoves = board.currentPlayer().getLegalMoves().size();
@@ -92,7 +85,7 @@ public class StockAlphaBeta implements MoveStrategy {
                         max(moveTransition.getTransitionBoard(), this.searchDepth - 1, highestSeenValue, lowestSeenValue);
                 if (currentPlayer.getAlliance().isWhite() && currentValue > highestSeenValue) {
                     highestSeenValue = currentValue;
-                    lastvalue=currentValue;
+                    lastValue=currentValue;
                     bestMove = move;
                     if(moveTransition.getTransitionBoard().blackPlayer().isInCheckMate()) {
                         break;
@@ -100,7 +93,7 @@ public class StockAlphaBeta implements MoveStrategy {
                 }
                 else if (currentPlayer.getAlliance().isBlack() && currentValue < lowestSeenValue) {
                     lowestSeenValue = currentValue;
-                    lastvalue=currentValue;
+                    lastValue=currentValue;
                     bestMove = move;
                     if(moveTransition.getTransitionBoard().whitePlayer().isInCheckMate()) {
                         break;
@@ -108,27 +101,19 @@ public class StockAlphaBeta implements MoveStrategy {
                 }
 
                 final String quiescenceInfo = " " + score(currentPlayer, highestSeenValue, lowestSeenValue) + " q: " +this.quiescenceCount;
-                s = "\t" + toString() + "(" +this.searchDepth+ "), m: (" +moveCounter+ "/" +numMoves+ ") " + move + ", best:  " + bestMove
+                s = toString() + " [" +this.searchDepth+ "], m: (" +moveCounter+ "/" +numMoves+ ") " + move + ", best:  " + bestMove
 
                         + quiescenceInfo + ", t: " +calculateTimeTaken(candidateMoveStartTime, System.nanoTime());
             } else {
-                s = "\t" + toString() + "(" +this.searchDepth + ")" + ", m: (" +moveCounter+ "/" +numMoves+ ") " + move + " is illegal! best: " +bestMove;
+                s =toString() + " [" +this.searchDepth + "]" + ", m: (" +moveCounter+ "/" +numMoves+ ") " + move + " is illegal! best: " +bestMove;
             }
             System.out.println(s);
-            //setChanged();
-            //notifyObservers(s);
             moveCounter++;
         }
 
         this.executionTime = System.currentTimeMillis() - startTime;
-        final String result = board.currentPlayer() + " SELECTS " +bestMove+ " [#boards evaluated = " +this.boardsEvaluated+
-                " time taken = " +this.executionTime/1000+ " rate = " +(1000 * ((double)this.boardsEvaluated/this.executionTime));
-        System.out.printf("%s SELECTS %s [#boards evaluated = %d, time taken = %d ms, rate = %.1f\n", board.currentPlayer(),
-                bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)));
-        //setChanged();
-        //notifyObservers(result);
-        this.value=lastvalue;
-        suggestedMove=bestMove;
+        System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", board.currentPlayer(),
+                bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)),((double) lastValue) /100);
         return bestMove;
     }
 
@@ -216,37 +201,5 @@ public class StockAlphaBeta implements MoveStrategy {
     private static String calculateTimeTaken(final long start, final long end) {
         final long timeTaken = (end - start) / 1000000;
         return timeTaken + " ms";
-    }
-
-
-    @Override
-    public void setStatus(Move bestMove, int lastValue, long executionTime) {
-
-    }
-
-    @Override
-    public double getValue() {
-        return ((double) this.value) /100;
-    }
-
-    @Override
-    public String getTimeLapsed() {
-        double s=this.executionTime/1000;
-        if(s>0){
-            return this.executionTime/1000+"s, "+executionTime%1000 +"ms";
-        }
-        else{
-            return this.executionTime%1000 +" ms";
-        }
-    }
-
-    @Override
-    public Move getSuggestedMove() {
-        return suggestedMove;
-    }
-
-    @Override
-    public boolean getExecutionFinished() {
-        return false;
     }
 }
