@@ -50,11 +50,11 @@ public class Table extends Observable {
     private boolean highlightEngineMoves=true;
     private boolean engineStop=true;
 
-    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,730);
+    private final static Dimension OUTER_FRAME_DIMENSION=new Dimension(800,740);
     private final static Dimension BOARD_PANEL_DIMENSION=new Dimension(400,350);
     private final static Dimension TILE_PANEL_DIMENSION=new Dimension(10,10);
     private final static Dimension LOG_PANEL_DIMENSION =new Dimension(400,30);
-    private final static Dimension ANALYZE_PANEL_DIMENSION =new Dimension(400,80);
+    private final static Dimension ANALYZE_PANEL_DIMENSION =new Dimension(400,100);
     private final static String defaultPieceImagePath="art/pieces/plain/";
     private final static String startingFEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -643,6 +643,7 @@ public class Table extends Observable {
         JTextField txtInput = new JTextField(startingFEN);
 
         LogPanel(){
+            add(copyFEN);
             add(backButton);
             backButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -755,7 +756,7 @@ public class Table extends Observable {
 
             add(openFEN);
             add(txtInput);
-            add(copyFEN);
+
 
             setPreferredSize(LOG_PANEL_DIMENSION);
             validate();
@@ -772,7 +773,7 @@ public class Table extends Observable {
         BoardEvaluator boardEvaluator=new StandardBoardEvaluator();
         String chosenEngine="Alpha Beta";
         MoveStrategy engine=new StockAlphaBeta(4,boardEvaluator);
-        JTextArea textArea = new JTextArea(2, 10);
+        JTextArea textArea = new JTextArea(3, 10);
         TextAreaOutputStream taOutputStream = new TextAreaOutputStream(textArea);
         String output="";
         ByteArrayOutputStream newConsole = new ByteArrayOutputStream();
