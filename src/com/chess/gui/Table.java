@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutionException;
 
 import static javax.swing.SwingUtilities.*;
 
-public class Table extends Observable {
+public class Table extends Observable{
     private final JFrame gameFrame=new JFrame("JChess");
     private final GameHistoryPanel gameHistoryPanel;
     private final TakenPiecesPanel takenPiecesPanel;
