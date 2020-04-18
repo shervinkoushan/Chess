@@ -8,8 +8,12 @@ import com.chess.engine.pieces.Piece;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.ai.*;
 import com.chess.pgn.FenUtilities;
+import com.chess.pgn.ParsePGNException;
 import com.google.common.collect.Lists;
 
+import static com.chess.pgn.PGNUtilities.persistPGNFile;
+import static com.chess.pgn.PGNUtilities.writeGameToPGNFile;
+import javax.swing.filechooser.FileFilter;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -21,6 +25,8 @@ import java.io.*;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.io.File;
+import java.io.IOException;
 
 import static javax.swing.SwingUtilities.*;
 
@@ -188,6 +194,10 @@ public class Table extends Observable{
         notifyObservers(playerType);
     }
 
+    private JFrame getGameFrame() {
+        return this.gameFrame;
+    }
+
     private LogPanel getLogPanel(){
         return this.logPanel;
     }
@@ -265,6 +275,42 @@ public class Table extends Observable{
     private JMenu createFileMenu() {
         final JMenu fileMenu=new JMenu("File");
 
+        final JMenuItem openPGN = new JMenuItem("Load PGN File", KeyEvent.VK_O);
+        openPGN.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                JFileChooser chooser = new JFileChooser();
+                int option = chooser.showOpenDialog(Table.get().getGameFrame());
+                if (option == JFileChooser.APPROVE_OPTION) {
+                    loadPGNFile(chooser.getSelectedFile());
+                }
+            }
+        });
+        fileMenu.add(openPGN);
+
+        final JMenuItem saveToPGN = new JMenuItem("Save Game", KeyEvent.VK_S);
+        saveToPGN.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(final ActionEvent e) {
+                final JFileChooser chooser = new JFileChooser();
+                chooser.setFileFilter(new FileFilter() {
+                    @Override
+                    public String getDescription() {
+                        return ".pgn";
+                    }
+                    @Override
+                    public boolean accept(final File file) {
+                        return file.isDirectory() || file.getName().toLowerCase().endsWith("pgn");
+                    }
+                });
+                final int option = chooser.showSaveDialog(Table.get().getGameFrame());
+                if (option == JFileChooser.APPROVE_OPTION) {
+                    savePGNFile(chooser.getSelectedFile());
+                }
+            }
+        });
+        fileMenu.add(saveToPGN);
+
         final JMenuItem restartMenuItem = new JMenuItem("Restart");
         restartMenuItem.addActionListener(new ActionListener() {
             @Override
@@ -292,12 +338,38 @@ public class Table extends Observable{
         exitMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                Table.get().getGameFrame().dispose();
                 System.exit(0);
             }
         });
         fileMenu.add(exitMenuItem);
 
         return fileMenu;
+    }
+
+    private static void loadPGNFile(final File pgnFile) {
+        try {
+            Table.get().getMoveLog().setLog(persistPGNFile(pgnFile));
+            Table.get().updateGameBoard(Board.createStandardBoard());
+            Table.get().getAnalyzePanel().setOutPutStream();
+            Table.get().getGameHistoryPanel().redo(Table.get().getGameBoard(), Table.get().getMoveLog());
+            Table.get().getTakenPiecesPanel().redo(Table.get().getMoveLog());
+            Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
+        }
+        catch (final IOException | ParsePGNException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void savePGNFile(final File pgnFile) {
+        try {
+            writeGameToPGNFile(pgnFile, Table.get().getMoveLog(),
+                    Table.get().getGameSetup().getWhitePlayerType()==PlayerType.COMPUTER ? Table.get().getGameSetup().getWhiteEngine() : "Human",
+                    Table.get().getGameSetup().getBlackPlayerType()==PlayerType.COMPUTER ? Table.get().getGameSetup().getBlackEngine() : "Human");
+        }
+        catch (final IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private JMenu createPreferencesMenu(){
@@ -413,6 +485,13 @@ public class Table extends Observable{
 
         MoveLog(){
             this.moves=new ArrayList<>();
+        }
+
+        public void setLog(List<Move> moveList){
+            this.moves.clear();
+            for(Move move:moveList){
+                this.moves.add(move);
+            }
         }
 
         public List<Move> getMoves(){
@@ -835,6 +914,8 @@ public class Table extends Observable{
                 }
                 });
 
+            textArea.setLineWrap(true);
+            textArea.setWrapStyleWord(true);
             add(p,BorderLayout.SOUTH);
             setOutPutStream();
             setPreferredSize(ANALYZE_PANEL_DIMENSION);
@@ -852,6 +933,7 @@ public class Table extends Observable{
                 System.setOut(new PrintStream(newConsole));
                 textArea.setText("");
             }
+            validate();
         }
 
         private JSpinner addLabeledSpinner(final Container c,

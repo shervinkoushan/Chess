@@ -41,5 +41,4 @@ public abstract class Game implements Playable {
         }
         return "None";
     }
-
 }

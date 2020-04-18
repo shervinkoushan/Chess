@@ -3,7 +3,6 @@ package com.chess.pgn;
 import com.chess.engine.board.Move;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.BoardUtils;
-import com.chess.engine.board.Move;
 import com.chess.gui.Table.MoveLog;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -32,10 +31,12 @@ public class PGNUtilities {
         throw new RuntimeException("Not Instantiable!");
     }
 
-    public static void persistPGNFile(final File pgnFile) throws IOException {
+    public static List<Move > persistPGNFile(final File pgnFile) throws IOException, ParsePGNException {
 
         int count = 0;
         int validCount = 0;
+        Game game = null;
+        String gameText="";
 
         try (final BufferedReader br = new BufferedReader(new FileReader(pgnFile))) {
             String line;
@@ -53,12 +54,12 @@ public class PGNUtilities {
                         final String[] ending = line.split(" ");
                         final String outcome = ending[ending.length - 1];
                         gameTextBuilder.append(line.replace(outcome, "")).append(" ");
-                        final String gameText = gameTextBuilder.toString().trim();
-                        if(!gameText.isEmpty() && gameText.length() > 80) {
-                            final Game game = GameFactory.createGame(tagsBuilder.build(), gameText, outcome);
-                            System.out.println("(" +(++count)+") Finished parsing " +game+ " count = " + (++count));
+                        gameText= gameTextBuilder.toString().trim();
+                        if(!gameText.isEmpty()) {
+                            game = GameFactory.createGame(tagsBuilder.build(), gameText, outcome);
+                            count++;
+                            //System.out.println("(" +(++count)+") Finished parsing " +game+ " count = " + (++count));
                             if(game.isValid()) {
-                                MySqlGamePersistence.get().persistGame(game);
                                 validCount++;
                             }
                         }
@@ -72,25 +73,76 @@ public class PGNUtilities {
             }
             br.readLine();
         }
-        System.out.println("Finished building book from pgn file: " + pgnFile + " Parsed " +count+ " games, valid = " +validCount);
+        System.out.println("Parsed " +count+ " games, valid = " +validCount+". Source: "+pgnFile+". ");
+        if(game!=null){
+            System.out.println("This is the last game in the file. Result: "+game.getWinner()+(game.getWinner()=="Tie" ? "" : "won"));
+            System.out.println(game.toString());
+        }
+        return createMoveList(PGNUtilities.processMoveText(gameText));
     }
 
-    public static void writeGameToPGNFile(final File pgnFile,
-                                          final MoveLog moveLog) throws IOException {
+    public static void writeGameToPGNFile(final File pgnFile, final MoveLog moveLog,
+                                          String whitePlayer, String blackPlayer) throws IOException {
         final StringBuilder builder = new StringBuilder();
         builder.append(calculateEventString()).append("\n");
+        builder.append(calculateSiteString()).append("\n");
         builder.append(calculateDateString()).append("\n");
+        builder.append(calculateRoundString()).append("\n");
+        builder.append(calculateWhiteString(whitePlayer)).append("\n");
+        builder.append(calculateBlackString(blackPlayer)).append("\n");
+
+        String result="1/2-1/2";
+        int lastMove=moveLog.getMoves().size()-1;
+        if(moveLog.getMoves().get(lastMove).toString().contains("#")){
+            if(lastMove%2==0){
+                result="1-0";
+            }
+            else{
+                result="0-1";
+            }
+        }
+        builder.append(calculateResultString(result)).append("\n");
+        builder.append("\n");
         builder.append(calculatePlyCountString(moveLog)).append("\n");
+        int counter=1;
+        int halfstep=1;
         for(final Move move : moveLog.getMoves()) {
+            halfstep++;
+            if(halfstep==2){
+                builder.append(counter+".");
+                halfstep=0;
+                counter++;
+            }
             builder.append(move.toString()).append(" ");
         }
+        builder.append(" "+result);
         try (final Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(pgnFile, true)))) {
             writer.write(builder.toString());
         }
     }
 
+    private static String calculateResultString(String result) {
+        return "[Result \""+result+"\"]";
+    }
+
+    private static String calculateBlackString(String blackPlayer) {
+        return "[Black \""+blackPlayer+"\"]";
+    }
+
+    private static String calculateWhiteString(String whitePlayer) {
+        return "[White \""+whitePlayer+"\"]";
+    }
+
+    private static String calculateRoundString() {
+        return "[Round \"" +"1"+ "\"]";
+    }
+
+    private static String calculateSiteString() {
+        return "[Site \""+"Your computer"+"\"]";
+    }
+
     private static String calculateEventString() {
-        return "[Event \"" +"Black Widow Game"+ "\"]";
+        return "[Event \"" +"Chess game"+ "\"]";
     }
 
     private static String calculateDateString() {
@@ -169,6 +221,22 @@ public class PGNUtilities {
             }
         }
         return builder.toString();
+    }
+
+    public static List<Move> createMoveList(List<String> stringList){
+        Board board=Board.createStandardBoard();
+        final List<Move> moveList = new ArrayList<>();
+        for(String s: stringList){
+            Move move=createMove(board,s);
+            if(move!=null){
+                moveList.add(move);
+                board=board.currentPlayer().makeMove(move).getTransitionBoard();
+            }
+            else{
+                break;
+            }
+        }
+        return moveList;
     }
 
     public static Move createMove(final Board board,
