@@ -511,11 +511,12 @@ public class Table extends Observable{
         }
 
         public void addMove(final Move move){
-            /*if(this.moves.size()>Table.get().currentPly){
-                List<Move> sub=this.moves.subList(0,Table.get().getCurrentPly());
+            if(this.moves.size()>Table.get().getCurrentPly()){
+                List<Move> sub=new ArrayList<>();
+                sub.addAll(this.moves.subList(0,Table.get().getCurrentPly()));
                 this.moves.clear();
                 this.moves.addAll(sub);
-            }*/
+            }
             this.moves.add(move);
         }
 

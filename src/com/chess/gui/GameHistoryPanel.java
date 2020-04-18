@@ -48,13 +48,16 @@ public class GameHistoryPanel extends JPanel {
             final String moveText=lastMove.toString();
             if(lastMove.getMovedPiece().getPieceAlliance().isWhite()){
                 this.model.setValueAt(moveText,currentRow,1);
-                //table.changeSelection(currentRow,1,false,false);
             }
             else if(lastMove.getMovedPiece().getPieceAlliance().isBlack()){
                 this.model.setValueAt(moveText,currentRow-1,2);
-                //table.changeSelection(currentRow-1,2,false,false);
             }
-            table.changeSelection((currentPly-1)/2,2-(currentPly)%2,false,false);
+            if(currentPly>0){
+                table.changeSelection((currentPly-1)/2,2-(currentPly)%2,false,false);
+            }
+            else{
+                table.changeSelection(0,1,false,false);
+            }
         }
 
         final JScrollBar vertical =scrollPane.getVerticalScrollBar();
