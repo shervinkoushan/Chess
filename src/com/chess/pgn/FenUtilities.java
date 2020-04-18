@@ -89,7 +89,9 @@ public class FenUtilities {
                     i++;
                     break;
                 default:
-                    throw new RuntimeException("Invalid FEN String " +gameConfiguration);
+                    System.out.println("Invalid FEN");
+                    return null;
+                    //throw new RuntimeException("Invalid FEN String " +gameConfiguration);
             }
         }
         builder.setMoveMaker(moveMaker(fenPartitions[1]));

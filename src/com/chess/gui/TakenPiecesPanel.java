@@ -37,22 +37,28 @@ public class TakenPiecesPanel extends JPanel {
         setPreferredSize(TAKEN_PIECES_DIMENSION);
     }
 
-    public void redo(final MoveLog movelog){
+    public void redo(final MoveLog movelog, int ply, boolean flipped){
         southPanel.removeAll();
         northPanel.removeAll();
 
         final List<Piece> whiteTakenPieces=new ArrayList<>();
         final List<Piece> blackTakenPieces=new ArrayList<>();
 
-        for(final Move move: movelog.getMoves()){
-            if(move.isAttack()){
-                final Piece takenPiece=move.getAttackedPiece();
-                if(takenPiece.getPieceAlliance().isWhite()){
-                    whiteTakenPieces.add(takenPiece);
+        for(int i=0; i<ply;i++){
+            if(i<movelog.getMoves().size()){
+                final Move move=movelog.getMoves().get(i);
+                if(move.isAttack()){
+                    final Piece takenPiece=move.getAttackedPiece();
+                    if(takenPiece.getPieceAlliance().isWhite()){
+                        whiteTakenPieces.add(takenPiece);
+                    }
+                    else{
+                        blackTakenPieces.add(takenPiece);
+                    }
                 }
-                else{
-                    blackTakenPieces.add(takenPiece);
-                }
+            }
+            else{
+                break;
             }
         }
 
@@ -77,7 +83,11 @@ public class TakenPiecesPanel extends JPanel {
                 final ImageIcon ic = new ImageIcon(image);
                 final JLabel imageLabel = new JLabel(new ImageIcon(ic.getImage().getScaledInstance(
                         ic.getIconWidth()/SCALING_FACTOR, ic.getIconWidth()/SCALING_FACTOR, Image.SCALE_SMOOTH)));
-                this.southPanel.add(imageLabel);
+                if (flipped) {
+                    this.southPanel.add(imageLabel);
+                } else {
+                    this.northPanel.add(imageLabel);
+                }
             }
             catch (final IOException e){
                 e.printStackTrace();
@@ -91,13 +101,19 @@ public class TakenPiecesPanel extends JPanel {
                 final ImageIcon ic = new ImageIcon(image);
                 final JLabel imageLabel = new JLabel(new ImageIcon(ic.getImage().getScaledInstance(
                         ic.getIconWidth()/SCALING_FACTOR, ic.getIconWidth()/SCALING_FACTOR, Image.SCALE_SMOOTH)));
-                this.northPanel.add(imageLabel);
+                if(flipped){
+                    this.northPanel.add(imageLabel);
+                }
+                else{
+                    this.southPanel.add(imageLabel);
+                }
             }
             catch (final IOException e){
                 e.printStackTrace();
             }
         }
 
+        repaint();
         validate();
     }
 }

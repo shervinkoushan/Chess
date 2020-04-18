@@ -141,6 +141,24 @@ public abstract class Player {
         return ImmutableList.copyOf(kingCastles);
     }
 
+    public boolean canCastleKingSideRightNow(){
+        for(Move move: this.legalMoves){
+            if(move.toString().contains("O-O")){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean canCastleQueenSideRightNow(){
+        for(Move move: this.legalMoves){
+            if(move.toString().contains("O-O-O")){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public abstract boolean isKingSideCastleCapable();
 
     public abstract boolean isQueenSideCastleCapable();

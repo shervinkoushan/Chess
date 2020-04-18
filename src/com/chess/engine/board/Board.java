@@ -60,20 +60,8 @@ public class Board {
         for(final Piece piece:pieces){
             final Collection<Move> possibleLegalMoves = piece.calculateLegalMoves(this);
             legalMoves.addAll(possibleLegalMoves);
-            //legalMoves.addAll(calculateTrueLegalMoves(possibleLegalMoves));
         }
 
-        return ImmutableList.copyOf(legalMoves);
-    }
-
-    public Collection<Move> calculateTrueLegalMoves(final Collection<Move> possibleLegalMoves) {
-        final List<Move> legalMoves = new ArrayList<>();
-        for(final Move move: possibleLegalMoves) {
-            MoveTransition transition = this.currentPlayer().makeMove(move);
-            if (transition.getMoveStatus().isDone()) {
-                legalMoves.add(move);
-            }
-        }
         return ImmutableList.copyOf(legalMoves);
     }
 

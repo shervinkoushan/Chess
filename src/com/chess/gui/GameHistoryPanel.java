@@ -10,6 +10,7 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class GameHistoryPanel extends JPanel {
+    private final JTable table;
     private final DataModel model;
     private final JScrollPane scrollPane;
     private static final Dimension HISTORY_PANEL_DIMENSION=new Dimension(150,400);
@@ -17,8 +18,9 @@ public class GameHistoryPanel extends JPanel {
     GameHistoryPanel(){
         this.setLayout(new BorderLayout());
         this.model=new DataModel();
-        final JTable table=new JTable(model);
+        table=new JTable(model);
         table.setRowHeight(15);
+        table.setCellSelectionEnabled(true);
         this.scrollPane=new JScrollPane(table);
         this.scrollPane.setColumnHeaderView(table.getTableHeader());
         this.scrollPane.setPreferredSize(HISTORY_PANEL_DIMENSION);
@@ -26,7 +28,7 @@ public class GameHistoryPanel extends JPanel {
         this.setVisible(true);
     }
 
-    void redo(final Board board, final MoveLog moveLog){
+    void redo(final Board board, final MoveLog moveLog, final int currentPly){
         int currentRow=0;
         this.model.clear();
         for(final Move move: moveLog.getMoves()){
@@ -42,19 +44,25 @@ public class GameHistoryPanel extends JPanel {
         }
 
         if(moveLog.getMoves().size()>0){
-            this.model.setValueAt(""+currentRow+1,currentRow,0);
             final Move lastMove=moveLog.getMoves().get(moveLog.size()-1);
             final String moveText=lastMove.toString();
             if(lastMove.getMovedPiece().getPieceAlliance().isWhite()){
                 this.model.setValueAt(moveText,currentRow,1);
+                //table.changeSelection(currentRow,1,false,false);
             }
             else if(lastMove.getMovedPiece().getPieceAlliance().isBlack()){
                 this.model.setValueAt(moveText,currentRow-1,2);
+                //table.changeSelection(currentRow-1,2,false,false);
             }
+            table.changeSelection((currentPly-1)/2,2-(currentPly)%2,false,false);
         }
 
         final JScrollBar vertical =scrollPane.getVerticalScrollBar();
         vertical.setValue(vertical.getMaximum());
+
+        System.out.println(currentPly);
+        repaint();
+        validate();
     }
 
     private static class DataModel extends DefaultTableModel {
