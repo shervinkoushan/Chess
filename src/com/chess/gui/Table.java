@@ -260,10 +260,25 @@ public class Table extends Observable{
             if(Table.get().getGameBoard().currentPlayer().isInCheckMate()){
                 System.out.println("Game over, "+Table.get().getGameBoard().currentPlayer()+" is in checkmate");
             }
-            if(Table.get().getGameBoard().currentPlayer().isInStaleMate()){
+            else if(Table.get().getGameBoard().currentPlayer().isInStaleMate()){
                 System.out.println("Game over, "+Table.get().getGameBoard().currentPlayer()+" is in stalemate");
             }
+            else if(Table.get().getGameBoard().insufficientMaterial()){
+                System.out.println("Game over, insufficient material");
+            }
+            else if(Table.get().isThreeFold()){
+                System.out.println("Game over, threefold repetition");
+            }
         }
+    }
+
+    private boolean isThreeFold() {
+        for(final String position: gameHistory){
+            if(Collections.frequency(gameHistory,position)==3){
+                return true;
+            }
+        }
+        return false;
     }
 
     private JMenuBar createTableMenuBar() {
@@ -317,6 +332,7 @@ public class Table extends Observable{
         restartMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                analyzePanel.clearOutput();
                 resetPly();
                 moveLog.clear();
                 chessBoard=Board.createStandardBoard();
@@ -593,7 +609,19 @@ public class Table extends Observable{
                         else{
                             //second click, make the move
                             destinationTile=chessBoard.getTile(tileId);
-                            final Move move=Move.MoveFactory.createMove(chessBoard,sourceTile.getTileCoordinate(),destinationTile.getTileCoordinate());
+                            Move move=Move.MoveFactory.createMove(chessBoard,sourceTile.getTileCoordinate(),destinationTile.getTileCoordinate());
+                            if(move.isPawnPromotion()){
+                                Object[] possibilities = {"Queen", "Rook", "Bishop", "Knight"};
+                                String promotionPiece = (String)JOptionPane.showInputDialog(
+                                        gameFrame,
+                                        "Choose promotion piece",
+                                        "Choose wisely",
+                                        JOptionPane.PLAIN_MESSAGE,
+                                        null,
+                                        possibilities,
+                                        "Queen");
+                               move=Move.MoveFactory.createPawnPromotionMove(chessBoard,sourceTile.getTileCoordinate(),destinationTile.getTileCoordinate(),promotionPiece);
+                            }
                             final MoveTransition transition=chessBoard.currentPlayer().makeMove(move);
                             if(transition.getMoveStatus().isDone()){
                                 chessBoard=transition.getTransitionBoard();
@@ -753,6 +781,17 @@ public class Table extends Observable{
         JTextField txtInput = new JTextField(startingFEN);
 
         LogPanel(){
+            txtInput.addFocusListener(new java.awt.event.FocusAdapter() {
+                public void focusGained(java.awt.event.FocusEvent evt) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            txtInput.selectAll();
+                        }
+                    });
+                }
+            });
+
             add(copyFEN);
             add(backButton);
             backButton.addActionListener(new ActionListener() {
@@ -950,6 +989,10 @@ public class Table extends Observable{
                 textArea.setText("");
             }
             validate();
+        }
+
+        public void clearOutput(){
+            textArea.setText("");
         }
 
         private JSpinner addLabeledSpinner(final Container c,

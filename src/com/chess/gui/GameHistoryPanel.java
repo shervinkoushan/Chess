@@ -63,7 +63,6 @@ public class GameHistoryPanel extends JPanel {
         final JScrollBar vertical =scrollPane.getVerticalScrollBar();
         vertical.setValue(vertical.getMaximum());
 
-        System.out.println(currentPly);
         repaint();
         validate();
     }

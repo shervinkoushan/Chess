@@ -143,7 +143,7 @@ public abstract class Player {
 
     public boolean canCastleKingSideRightNow(){
         for(Move move: this.legalMoves){
-            if(move.toString().contains("O-O")){
+            if(move.toString().contains("O-O") && !move.toString().contains("O-O-O")){
                 return true;
             }
         }

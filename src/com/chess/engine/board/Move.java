@@ -79,6 +79,14 @@ public abstract class Move {
         return false;
     }
 
+    public boolean isPawnPromotion(){
+        return false;
+    }
+
+    public String promotionPiece(){
+        return "";
+    }
+
     public Piece getAttackedPiece(){
         return null;
     }
@@ -92,6 +100,21 @@ public abstract class Move {
         }
         else if (board.currentPlayer().isInCheck()){
             return "+";
+        }
+        return "";
+    }
+
+    protected String disambiguation(){
+        for(final Move move: board.currentPlayer().getLegalMoves()){
+            if(move.getDestinationCoordinate()==this.destinationCoordinate && move.getMovedPiece().getPieceType()==this.movedPiece.getPieceType()
+                    && move.getMovedPiece().getPiecePosition()!=this.movedPiece.getPiecePosition()){
+                if(BoardUtils.getColumn(move.getMovedPiece().getPiecePosition())==BoardUtils.getColumn(this.movedPiece.getPiecePosition())){
+                    return BoardUtils.mapCoordinate(this.movedPiece.getPiecePosition()).substring(1,2);
+                }
+                else{
+                    return BoardUtils.mapCoordinate(this.movedPiece.getPiecePosition()).substring(0,1);
+                }
+            }
         }
         return "";
     }
@@ -130,7 +153,7 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return this.movedPiece+"x"+BoardUtils.mapCoordinate(this.destinationCoordinate)+
+            return this.movedPiece+disambiguation()+"x"+BoardUtils.mapCoordinate(this.destinationCoordinate)+
                     calculateCheckAndCheckMateHash();
         }
     }
@@ -149,7 +172,7 @@ public abstract class Move {
 
         @Override
         public String toString() {
-            return this.movedPiece+BoardUtils.mapCoordinate(this.destinationCoordinate)+
+            return this.movedPiece+disambiguation()+BoardUtils.mapCoordinate(this.destinationCoordinate)+
                     calculateCheckAndCheckMateHash();
         }
     }
@@ -265,11 +288,23 @@ public abstract class Move {
     public static class PawnPromotion extends Move{
         final Move decoratedMove;
         final Pawn promotedPawn;
+        final Piece promotionPiece;
 
-        public PawnPromotion(final Move decoratedMove){
+        public PawnPromotion(final Move decoratedMove, final Piece promotionPiece){
             super(decoratedMove.getBoard(),decoratedMove.getMovedPiece(),decoratedMove.getDestinationCoordinate());
             this.decoratedMove=decoratedMove;
             this.promotedPawn=(Pawn) decoratedMove.getMovedPiece();
+            this.promotionPiece=promotionPiece;
+        }
+
+        @Override
+        public boolean isPawnPromotion(){
+            return true;
+        }
+
+        @Override
+        public String promotionPiece(){
+            return promotionPiece.getPieceType().getFullName();
         }
 
         @Override
@@ -294,7 +329,7 @@ public abstract class Move {
             for(final Piece piece:pawnMovedBoard.currentPlayer().getOpponent().getActivePieces()){
                 builder.setPiece(piece);
             }
-            builder.setPiece(this.promotedPawn.getPromotionPiece().movePiece(this));
+            builder.setPiece(promotionPiece.movePiece(this));
             builder.setMoveMaker(pawnMovedBoard.currentPlayer().getAlliance());
             return builder.build();
         }
@@ -311,7 +346,7 @@ public abstract class Move {
 
         @Override
         public String toString(){
-            return decoratedMove.toString()+"="+this.promotedPawn.getPromotionPiece()+
+            return decoratedMove.toString()+"="+promotionPiece+
                     calculateCheckAndCheckMateHash();
         }
     }
@@ -499,6 +534,16 @@ public abstract class Move {
         public static Move createMove(final Board board, final int currentCoordinate, final int destinationCoordinate){
             for(final Move move:board.getAllLegalMoves()){
                 if(move.getCurrentCoordinate()==currentCoordinate && move.getDestinationCoordinate()==destinationCoordinate){
+                    return move;
+                }
+            }
+            return NULL_MOVE;
+        }
+
+        public static Move createPawnPromotionMove(final Board board, final int currentCoordinate, final int destinationCoordinate, String promotionPiece){
+            for(final Move move:board.getAllLegalMoves()){
+                if(move.getCurrentCoordinate()==currentCoordinate && move.getDestinationCoordinate()==destinationCoordinate
+                && move.promotionPiece().equals(promotionPiece)){
                     return move;
                 }
             }

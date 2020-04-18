@@ -11,6 +11,9 @@ import com.google.common.collect.Iterables;
 
 import java.util.*;
 
+import static com.chess.engine.pieces.Piece.*;
+import static com.chess.engine.pieces.Piece.PieceType.*;
+
 public class Board {
     private final List<Tile> gameBoard;
     private final Collection<Piece> whitePieces;
@@ -76,6 +79,18 @@ public class Board {
             }
         }
         return ImmutableList.copyOf(pieces);
+    }
+
+    public boolean insufficientMaterial(){
+        final List<Piece> pieces = new ArrayList<>();
+        pieces.addAll(calculateActivePieces(this.gameBoard,Alliance.WHITE));
+        pieces.addAll(calculateActivePieces(this.gameBoard,Alliance.BLACK));
+        for(final Piece piece: pieces){
+            if(piece.getPieceType()!= KING){
+                return false;
+            }
+        }
+        return true;
     }
 
     public Tile getTile(final int tileCoordinate){
