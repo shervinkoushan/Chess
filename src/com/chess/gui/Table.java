@@ -15,6 +15,8 @@ import com.google.common.collect.Lists;
 import static com.chess.engine.pieces.Piece.PieceType.*;
 import static com.chess.pgn.PGNUtilities.persistPGNFile;
 import static com.chess.pgn.PGNUtilities.writeGameToPGNFile;
+
+import javax.sound.sampled.*;
 import javax.swing.filechooser.FileFilter;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -24,6 +26,8 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -67,6 +71,7 @@ public class Table extends Observable {
     private final static Dimension LOG_PANEL_DIMENSION = new Dimension(400, 30);
     private final static Dimension ANALYZE_PANEL_DIMENSION = new Dimension(400, 100);
     private final static String defaultPieceImagePath = "art/pieces/plain/";
+    private final static String defaultSoundPath="art/sounds/";
     private final static String startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
     private final Color LIGHT_TILE_COLOR = Color.decode("#EDD0A7");
@@ -272,6 +277,12 @@ public class Table extends Observable {
                     Table.get().updateGameBoard(Table.get().getGameBoard().currentPlayer().makeMove(bestMove).getTransitionBoard());
                     Table.get().getMoveLog().addMove(bestMove);
                     Table.get().moveMadeUpdate(PlayerType.COMPUTER);
+                    if(bestMove.isAttack()){
+                        Table.get().playCaptureSound();
+                    }
+                    else{
+                        Table.get().playMoveSound();
+                    }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
@@ -685,6 +696,12 @@ public class Table extends Observable {
                             if (transition.getMoveStatus().isDone()) {
                                 chessBoard = transition.getTransitionBoard();
                                 moveLog.addMove(move);
+                                if(move.isAttack()){
+                                    playCaptureSound();
+                                }
+                                else{
+                                    playMoveSound();
+                                }
                                 moveMadeUpdate(PlayerType.HUMAN);
                             }
                             sourceTile = null;
@@ -878,13 +895,15 @@ public class Table extends Observable {
 
             stopButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (engineStop && gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !gameOver) {
-                        engineStop = false;
-                        stopButton.setText("Stop");
-                        Table.get().setAIThinkTank(new AIThinkTank());
-                        Table.get().getAIThinkTank().execute();
+                    if (engineStop) {
+                        if(gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !gameOver){
+                            engineStop = false;
+                            stopButton.setText("Stop");
+                            Table.get().setAIThinkTank(new AIThinkTank());
+                            Table.get().getAIThinkTank().execute();
+                        }
                     }
-                    else {
+                    else{
                         Table.get().getAIThinkTank().getGameEngine().cancel(true);
                         engineStop = true;
                         stopButton.setText("Start");
@@ -1131,6 +1150,15 @@ public class Table extends Observable {
     private void updateGUI(){
         updateGameHistory();
         updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
+        if(currentPly>0){
+            if(moveLog.getMoves().get(currentPly-1).isAttack()){
+                playCaptureSound();
+            }
+            else{
+                playMoveSound();
+            }
+        }
+        
         invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -1139,5 +1167,27 @@ public class Table extends Observable {
                 boardPanel.drawBoard(chessBoard);
             }
         });
+    }
+
+    private void playMoveSound() {
+        try{
+            Clip clip = AudioSystem.getClip();
+            AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"move2.wav"));
+            clip.open(ais);
+            clip.start();
+        } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void playCaptureSound() {
+        try{
+            Clip clip = AudioSystem.getClip();
+            AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"Capture.wav"));
+            clip.open(ais);
+            clip.start();
+        } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
+            e.printStackTrace();
+        }
     }
 }
