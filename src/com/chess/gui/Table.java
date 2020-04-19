@@ -671,7 +671,6 @@ public class Table extends Observable {
             validate();
         }
 
-
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -821,18 +820,7 @@ public class Table extends Observable {
                 public void actionPerformed(ActionEvent e) {
                     engineStop = true;
                     stopButton.setText("Start");
-
-                    subtractPly();
-                    updateGameHistory();
-                    updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
-                    invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
-                            takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
-                            boardPanel.drawBoard(chessBoard);
-                        }
-                    });
+                    goBack();
                 }
             });
 
@@ -860,21 +848,7 @@ public class Table extends Observable {
                 public void actionPerformed(ActionEvent e) {
                     engineStop = true;
                     stopButton.setText("Start");
-
-                    if (currentPly < moveLog.size()) {
-                        addPly();
-                    }
-
-                    updateGameHistory();
-                    updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
-                    invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
-                            takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
-                            boardPanel.drawBoard(chessBoard);
-                        }
-                    });
+                    goForward();
                 }
             });
 
@@ -1061,17 +1035,10 @@ public class Table extends Observable {
             public boolean dispatchKeyEvent(KeyEvent e) {
                 if (e.getID() == KeyEvent.KEY_PRESSED) {
                     if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-                        subtractPly();
-                        updateGameHistory();
-                        updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
-                        invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
-                                takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
-                                boardPanel.drawBoard(chessBoard);
-                            }
-                        });
+                        goBack();
+                    }
+                    else if(e.getKeyCode() == KeyEvent.VK_RIGHT){
+                        goForward();
                     }
                 }
                 return false;
@@ -1085,4 +1052,33 @@ public class Table extends Observable {
         }
     }
 
+    private void goBack(){
+        subtractPly();
+        updateGameHistory();
+        updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
+        invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+                takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
+                boardPanel.drawBoard(chessBoard);
+            }
+        });
+    }
+
+    private void goForward(){
+        if (currentPly < moveLog.size()) {
+            addPly();
+        }
+        updateGameHistory();
+        updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
+        invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+                takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
+                boardPanel.drawBoard(chessBoard);
+            }
+        });
+    }
 }
