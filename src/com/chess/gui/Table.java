@@ -47,6 +47,7 @@ public class Table extends Observable {
     private Move engineMove;
     private List<String> gameHistory = new ArrayList<>();
     private Engine analyzeEngine;
+    private AIThinkTank aiThinkTank=new AIThinkTank();
 
     private Tile sourceTile;
     private Tile destinationTile;
@@ -136,6 +137,14 @@ public class Table extends Observable {
         return this.chessBoard;
     }
 
+    private AIThinkTank getAIThinkTank(){
+        return this.aiThinkTank;
+    }
+
+    private void setAIThinkTank(AIThinkTank aiThinkTank){
+        this.aiThinkTank=aiThinkTank;
+    }
+
     private BoardDirection getBoardDirection() {
         return this.boardDirection;
     }
@@ -223,7 +232,13 @@ public class Table extends Observable {
     }
 
     private static class AIThinkTank extends SwingWorker<Move, String> {
+        private MoveStrategy gameEngine;
+
         private AIThinkTank() {
+        }
+
+        public MoveStrategy getGameEngine(){
+            return this.gameEngine;
         }
 
         @Override
@@ -231,35 +246,35 @@ public class Table extends Observable {
             final MoveStrategy engine;
             if (Table.get().getGameBoard().currentPlayer().getAlliance().isWhite()) {
                 if (Table.get().getGameSetup().getWhiteEngine().equals("Alpha Beta")) {
-                    engine = new StockAlphaBeta(Table.get().getGameSetup().getWhiteSearchDepth(), Table.get().getGameSetup().getWhiteBoardEvaluator());
+                    gameEngine = new StockAlphaBeta(Table.get().getGameSetup().getWhiteSearchDepth(), Table.get().getGameSetup().getWhiteBoardEvaluator());
                 } else {
-                    engine = new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth(), Table.get().getGameSetup().getWhiteBoardEvaluator());
+                    gameEngine = new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth(), Table.get().getGameSetup().getWhiteBoardEvaluator());
                 }
             } else {
                 if (Table.get().getGameSetup().getBlackEngine().equals("Alpha Beta")) {
-                    engine = new StockAlphaBeta(Table.get().getGameSetup().getBlackSearchDepth(), Table.get().getGameSetup().getBlackBoardEvaluator());
+                    gameEngine = new StockAlphaBeta(Table.get().getGameSetup().getBlackSearchDepth(), Table.get().getGameSetup().getBlackBoardEvaluator());
                 } else {
-                    engine = new MiniMax(Table.get().getGameSetup().getBlackSearchDepth(), Table.get().getGameSetup().getBlackBoardEvaluator());
+                    gameEngine = new MiniMax(Table.get().getGameSetup().getBlackSearchDepth(), Table.get().getGameSetup().getBlackBoardEvaluator());
                 }
             }
 
-            final Move bestMove = engine.execute(Table.get().getGameBoard());
+            final Move bestMove = gameEngine.execute(Table.get().getGameBoard());
 
             return bestMove;
         }
 
         @Override
         public void done() {
-            try {
-                final Move bestMove = get();
-                Table.get().updateComputerMove(bestMove);
-                Table.get().updateGameBoard(Table.get().getGameBoard().currentPlayer().makeMove(bestMove).getTransitionBoard());
-                Table.get().getMoveLog().addMove(bestMove);
-                Table.get().moveMadeUpdate(PlayerType.COMPUTER);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            if(!Table.get().getStopped()){
+                try {
+                    final Move bestMove = get();
+                    Table.get().updateComputerMove(bestMove);
+                    Table.get().updateGameBoard(Table.get().getGameBoard().currentPlayer().makeMove(bestMove).getTransitionBoard());
+                    Table.get().getMoveLog().addMove(bestMove);
+                    Table.get().moveMadeUpdate(PlayerType.COMPUTER);
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -283,9 +298,9 @@ public class Table extends Observable {
             if (Table.get().getGameSetup().isAIPlayer(Table.get().getGameBoard().currentPlayer()) &&
                     !Table.get().getGameOver() && !Table.get().getStopped()) {
                 //create an AI thread
-                final AIThinkTank thinkTank = new AIThinkTank();
+                Table.get().setAIThinkTank(new AIThinkTank());
                 //execute AI work
-                thinkTank.execute();
+                Table.get().getAIThinkTank().execute();
             }
         }
     }
@@ -866,10 +881,11 @@ public class Table extends Observable {
                     if (engineStop && gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !gameOver) {
                         engineStop = false;
                         stopButton.setText("Stop");
-                        final AIThinkTank thinkTank = new AIThinkTank();
-                        thinkTank.execute();
+                        Table.get().setAIThinkTank(new AIThinkTank());
+                        Table.get().getAIThinkTank().execute();
                     }
                     else {
+                        Table.get().getAIThinkTank().getGameEngine().cancel(true);
                         engineStop = true;
                         stopButton.setText("Start");
                     }
@@ -926,7 +942,7 @@ public class Table extends Observable {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     analyzeEngineStop=true;
-                    analyzeEngine.cancel(true);
+                    analyzeEngine.getEngine().cancel(true);
                 }
             });
 
@@ -1055,10 +1071,13 @@ public class Table extends Observable {
             this.engine = engine;
         }
 
+        public MoveStrategy getEngine(){
+            return this.engine;
+        }
+
         @Override
         protected Move doInBackground() throws Exception {
-            Move move= engine.execute(Table.get().getGameBoard());
-            return move;
+            return engine.execute(Table.get().getGameBoard());
         }
 
         @Override

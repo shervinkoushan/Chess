@@ -15,13 +15,18 @@ import java.util.Observable;
 import static com.chess.engine.board.BoardUtils.mvvlva;
 import static com.chess.engine.board.Move.MoveFactory;
 
-public class StockAlphaBeta implements MoveStrategy {
+public class StockAlphaBeta extends MoveStrategy {
     private final BoardEvaluator evaluator;
     private final int searchDepth;
     private long boardsEvaluated;
     private long executionTime;
     private int quiescenceCount;
     private static final int MAX_QUIESCENCE = 5000;
+
+    @Override
+    protected Move doInBackground() throws Exception {
+        return null;
+    }
 
     private enum MoveSorter {
 
@@ -75,45 +80,52 @@ public class StockAlphaBeta implements MoveStrategy {
         int numMoves = board.currentPlayer().getLegalMoves().size();
         Collection<Move> sortedMoves = MoveSorter.EXPENSIVE.sort((board.currentPlayer().getLegalMoves()));
         for (final Move move : sortedMoves) {
-            final MoveTransition moveTransition = board.currentPlayer().makeMove(move);
-            this.quiescenceCount = 0;
-            final String s;
-            if (moveTransition.getMoveStatus().isDone()) {
-                final long candidateMoveStartTime = System.nanoTime();
-                currentValue = currentPlayer.getAlliance().isWhite() ?
-                        min(moveTransition.getTransitionBoard(), this.searchDepth - 1, highestSeenValue, lowestSeenValue) :
-                        max(moveTransition.getTransitionBoard(), this.searchDepth - 1, highestSeenValue, lowestSeenValue);
-                if (currentPlayer.getAlliance().isWhite() && currentValue > highestSeenValue) {
-                    highestSeenValue = currentValue;
-                    lastValue=currentValue;
-                    bestMove = move;
-                    if(moveTransition.getTransitionBoard().blackPlayer().isInCheckMate()) {
-                        break;
+            if(!isCancelled()){
+                final MoveTransition moveTransition = board.currentPlayer().makeMove(move);
+                this.quiescenceCount = 0;
+                final String s;
+                if (moveTransition.getMoveStatus().isDone()) {
+                    final long candidateMoveStartTime = System.nanoTime();
+                    currentValue = currentPlayer.getAlliance().isWhite() ?
+                            min(moveTransition.getTransitionBoard(), this.searchDepth - 1, highestSeenValue, lowestSeenValue) :
+                            max(moveTransition.getTransitionBoard(), this.searchDepth - 1, highestSeenValue, lowestSeenValue);
+                    if (currentPlayer.getAlliance().isWhite() && currentValue > highestSeenValue) {
+                        highestSeenValue = currentValue;
+                        lastValue=currentValue;
+                        bestMove = move;
+                        if(moveTransition.getTransitionBoard().blackPlayer().isInCheckMate()) {
+                            break;
+                        }
                     }
-                }
-                else if (currentPlayer.getAlliance().isBlack() && currentValue < lowestSeenValue) {
-                    lowestSeenValue = currentValue;
-                    lastValue=currentValue;
-                    bestMove = move;
-                    if(moveTransition.getTransitionBoard().whitePlayer().isInCheckMate()) {
-                        break;
+                    else if (currentPlayer.getAlliance().isBlack() && currentValue < lowestSeenValue) {
+                        lowestSeenValue = currentValue;
+                        lastValue=currentValue;
+                        bestMove = move;
+                        if(moveTransition.getTransitionBoard().whitePlayer().isInCheckMate()) {
+                            break;
+                        }
                     }
+
+                    final String quiescenceInfo = " " + score(currentPlayer, highestSeenValue, lowestSeenValue) + " q: " +this.quiescenceCount;
+                    s = toString() + " [" +this.searchDepth+ "], m: (" +moveCounter+ "/" +numMoves+ ") " + move + ", best:  " + bestMove
+
+                            + quiescenceInfo + ", t: " +calculateTimeTaken(candidateMoveStartTime, System.nanoTime());
+                } else {
+                    s =toString() + " [" +this.searchDepth + "]" + ", m: (" +moveCounter+ "/" +numMoves+ ") " + move + " is illegal! best: " +bestMove;
                 }
-
-                final String quiescenceInfo = " " + score(currentPlayer, highestSeenValue, lowestSeenValue) + " q: " +this.quiescenceCount;
-                s = toString() + " [" +this.searchDepth+ "], m: (" +moveCounter+ "/" +numMoves+ ") " + move + ", best:  " + bestMove
-
-                        + quiescenceInfo + ", t: " +calculateTimeTaken(candidateMoveStartTime, System.nanoTime());
-            } else {
-                s =toString() + " [" +this.searchDepth + "]" + ", m: (" +moveCounter+ "/" +numMoves+ ") " + move + " is illegal! best: " +bestMove;
+                System.out.println(s);
+                moveCounter++;
             }
-            System.out.println(s);
-            moveCounter++;
         }
 
-        this.executionTime = System.currentTimeMillis() - startTime;
-        System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", board.currentPlayer(),
-                bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)),((double) lastValue) /100);
+        if(!isCancelled()){
+            this.executionTime = System.currentTimeMillis() - startTime;
+            System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", board.currentPlayer(),
+                    bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)),((double) lastValue) /100);
+        }
+        else{
+            System.out.println("Alpha Beta stopped");
+        }
         return bestMove;
     }
 
@@ -135,19 +147,22 @@ public class StockAlphaBeta implements MoveStrategy {
                     final int depth,
                     final int highest,
                     final int lowest) {
-        if (depth == 0 || BoardUtils.isEndGame(board)) {
-            this.boardsEvaluated++;
-            return this.evaluator.evaluate(board, depth);
-        }
         int currentHighest = highest;
-        for (final Move move : MoveSorter.STANDARD.sort((board.currentPlayer().getLegalMoves()))) {
-            final MoveTransition moveTransition = board.currentPlayer().makeMove(move);
-            if (moveTransition.getMoveStatus().isDone()) {
-                Board toBoard = moveTransition.getTransitionBoard();
-                currentHighest = Math.max(currentHighest, min(toBoard,
-                        calculateQuiescenceDepth(toBoard, depth), currentHighest, lowest));
-                if (currentHighest >= lowest) {
-                    return lowest;
+        if(!isCancelled()){
+            if (depth == 0 || BoardUtils.isEndGame(board)) {
+                this.boardsEvaluated++;
+                return this.evaluator.evaluate(board, depth);
+            }
+
+            for (final Move move : MoveSorter.STANDARD.sort((board.currentPlayer().getLegalMoves()))) {
+                final MoveTransition moveTransition = board.currentPlayer().makeMove(move);
+                if (moveTransition.getMoveStatus().isDone()) {
+                    Board toBoard = moveTransition.getTransitionBoard();
+                    currentHighest = Math.max(currentHighest, min(toBoard,
+                            calculateQuiescenceDepth(toBoard, depth), currentHighest, lowest));
+                    if (currentHighest >= lowest) {
+                        return lowest;
+                    }
                 }
             }
         }
@@ -158,19 +173,22 @@ public class StockAlphaBeta implements MoveStrategy {
                     final int depth,
                     final int highest,
                     final int lowest) {
-        if (depth == 0 || BoardUtils.isEndGame(board)) {
-            this.boardsEvaluated++;
-            return this.evaluator.evaluate(board, depth);
-        }
         int currentLowest = lowest;
-        for (final Move move : MoveSorter.STANDARD.sort((board.currentPlayer().getLegalMoves()))) {
-            final MoveTransition moveTransition = board.currentPlayer().makeMove(move);
-            if (moveTransition.getMoveStatus().isDone()) {
-                Board toBoard = moveTransition.getTransitionBoard();
-                currentLowest = Math.min(currentLowest, max(toBoard,
-                        calculateQuiescenceDepth(toBoard, depth), highest, currentLowest));
-                if (currentLowest <= highest) {
-                    return highest;
+        if(!isCancelled()){
+            if (depth == 0 || BoardUtils.isEndGame(board)) {
+                this.boardsEvaluated++;
+                return this.evaluator.evaluate(board, depth);
+            }
+
+            for (final Move move : MoveSorter.STANDARD.sort((board.currentPlayer().getLegalMoves()))) {
+                final MoveTransition moveTransition = board.currentPlayer().makeMove(move);
+                if (moveTransition.getMoveStatus().isDone()) {
+                    Board toBoard = moveTransition.getTransitionBoard();
+                    currentLowest = Math.min(currentLowest, max(toBoard,
+                            calculateQuiescenceDepth(toBoard, depth), highest, currentLowest));
+                    if (currentLowest <= highest) {
+                        return highest;
+                    }
                 }
             }
         }

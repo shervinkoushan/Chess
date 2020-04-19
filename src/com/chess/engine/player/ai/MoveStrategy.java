@@ -5,6 +5,6 @@ import com.chess.engine.board.Move;
 
 import javax.swing.*;
 
-public interface MoveStrategy{
-    Move execute(Board board);
+public abstract class MoveStrategy extends SwingWorker<Move,String>{
+    public abstract Move execute(Board board);
 }
