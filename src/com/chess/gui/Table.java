@@ -58,14 +58,14 @@ public class Table extends Observable {
     private Piece humanMovedPiece;
     private int currentPly = 0;
 
+    private boolean soundMuted=false;
     private boolean highlightLegals = true;
     private boolean engineOutput = true;
     private boolean highlightEngineMoves = true;
     private boolean engineStop = true;
-    private boolean gameOver=false;
-    private boolean analyzeEngineStop = false;
+    private boolean analyzeEngineStop = true;
 
-    private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(850, 740);
+    private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(830, 740);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension LOG_PANEL_DIMENSION = new Dimension(400, 30);
@@ -202,12 +202,12 @@ public class Table extends Observable {
         return this.engineStop;
     }
 
-    private boolean getGameOver(){
-        return this.gameOver;
-    }
-
     private boolean isAnalyzeEngineStop(){
         return this.analyzeEngineStop;
+    }
+
+    private void setAnalyzeEngineStop(boolean stop){
+        this.analyzeEngineStop=stop;
     }
 
     private MoveLog getMoveLog() {
@@ -299,7 +299,6 @@ public class Table extends Observable {
         updateEngineMove(null);
         setChanged();
         notifyObservers(playerType);
-        gameOver=checkIfGameOver();
     }
 
     private static class TableGameAIWatcher implements Observer {
@@ -307,7 +306,7 @@ public class Table extends Observable {
         @Override
         public void update(Observable o, Object arg) {
             if (Table.get().getGameSetup().isAIPlayer(Table.get().getGameBoard().currentPlayer()) &&
-                    !Table.get().getGameOver() && !Table.get().getStopped()) {
+                    !Table.get().isGameOver() && !Table.get().getStopped()) {
                 //create an AI thread
                 Table.get().setAIThinkTank(new AIThinkTank());
                 //execute AI work
@@ -325,7 +324,7 @@ public class Table extends Observable {
         return false;
     }
 
-    private boolean checkIfGameOver(){
+    private boolean isGameOver(){
         if (chessBoard.currentPlayer().isInCheckMate()) {
             System.out.println("Game over, " + chessBoard.currentPlayer() + " is in checkmate");
             setEngineStop(true);
@@ -501,7 +500,17 @@ public class Table extends Observable {
             @Override
             public void actionPerformed(ActionEvent e) {
                 engineOutput = engineCheckbox.isSelected();
-                Table.get().getAnalyzePanel().setOutPutStream();
+                analyzePanel.setOutPutStream();
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
+            }
+        });
+
+        final JCheckBoxMenuItem soundCheckbox = new JCheckBoxMenuItem("Mute sound", false);
+        soundCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                soundMuted = soundCheckbox.isSelected();
                 preferencesMenu.setPopupMenuVisible(true);
                 preferencesMenu.setSelected(true);
             }
@@ -510,6 +519,7 @@ public class Table extends Observable {
         preferencesMenu.add(legalMoveHighlighterCheckbox);
         preferencesMenu.add(engineHighlighterCheckbox);
         preferencesMenu.add(engineCheckbox);
+        preferencesMenu.add(soundCheckbox);
 
         preferencesMenu.addSeparator();
         final JMenuItem closeMenu = new JMenuItem("Close");
@@ -664,7 +674,7 @@ public class Table extends Observable {
                 @Override
                 public void mouseClicked(final MouseEvent e) {
 
-                    if (isRightMouseButton(e) || (gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !engineStop) || gameOver) {
+                    if (isRightMouseButton(e) || (gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !engineStop) || isGameOver() || !analyzeEngineStop) {
                         sourceTile = null;
                         destinationTile = null;
                         humanMovedPiece = null;
@@ -741,10 +751,10 @@ public class Table extends Observable {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (pieceImage != null) {
-                g.drawImage(pieceImage, 5, 0, this);
+                g.drawImage(pieceImage,2, 0, this);
             }
             if (dotImage != null) {
-                g.drawImage(dotImage, 30, 28, this);
+                g.drawImage(dotImage, 29, 28, this);
             }
         }
 
@@ -867,7 +877,6 @@ public class Table extends Observable {
         final JButton openFEN = new JButton("Load FEN");
         final JButton copyFEN = new JButton("Copy FEN");
         JTextField txtInput = new JTextField(startingFEN);
-        final JButton stopAnalysis = new JButton("Stop Analysis");
 
         LogPanel() {
             txtInput.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -895,8 +904,8 @@ public class Table extends Observable {
 
             stopButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (engineStop) {
-                        if(gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !gameOver){
+                    if(engineStop) {
+                        if(gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !isGameOver() && analyzeEngineStop){
                             engineStop = false;
                             stopButton.setText("Stop");
                             Table.get().setAIThinkTank(new AIThinkTank());
@@ -957,24 +966,15 @@ public class Table extends Observable {
                 }
             });
 
-            stopAnalysis.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    analyzeEngineStop=true;
-                    analyzeEngine.getEngine().cancel(true);
-                }
-            });
-
             add(openFEN);
             add(txtInput);
-            add(stopAnalysis);
             setPreferredSize(LOG_PANEL_DIMENSION);
             validate();
         }
     }
 
     private class AnalyzePanel extends JPanel {
-        final JButton analyzeBtn = new JButton("Analyze");
+        final JButton analyzeBtn = new JButton("Start Analyzing");
         JSpinner depthSpinner;
         String[] boardEvaluatorChoices = {"Standard", "Modified"};
         String[] aiChoices = {"Alpha Beta", "Minimax"};
@@ -989,6 +989,10 @@ public class Table extends Observable {
         ByteArrayOutputStream newConsole = new ByteArrayOutputStream();
         JScrollPane p = new JScrollPane(textArea, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        public void setAnalyzeBtn(String text){
+            analyzeBtn.setText(text);
+        }
 
         AnalyzePanel() {
             super(new BorderLayout());
@@ -1032,17 +1036,25 @@ public class Table extends Observable {
             analyzeBtn.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    analyzeEngineStop=false;
-                    switch (chosenEngine) {
-                        case "Alpha Beta":
-                            engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator);
-                            break;
-                        case "Minimax":
-                            engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator);
-                            break;
+                    if(!analyzeEngineStop){
+                        analyzeEngineStop=true;
+                        analyzeBtn.setText("Start Analyzing");
+                        analyzeEngine.getEngine().cancel(true);
                     }
-                    analyzeEngine = new Engine(engine);
-                    analyzeEngine.execute();
+                    else if(engineStop){
+                        analyzeEngineStop=false;
+                        analyzeBtn.setText("Stop Analyzing");
+                        switch (chosenEngine) {
+                            case "Alpha Beta":
+                                engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator);
+                                break;
+                            case "Minimax":
+                                engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator);
+                                break;
+                        }
+                        analyzeEngine = new Engine(engine);
+                        analyzeEngine.execute();
+                    }
                 }
             });
 
@@ -1109,9 +1121,10 @@ public class Table extends Observable {
                     e.printStackTrace();
                 }
             }
+            Table.get().setAnalyzeEngineStop(true);
+            Table.get().getAnalyzePanel().setAnalyzeBtn("Start Analyzing");
         }
     }
-
     private class MyFrame extends JFrame {
         private class MyDispatcher implements KeyEventDispatcher {
             @Override
@@ -1158,7 +1171,7 @@ public class Table extends Observable {
                 playMoveSound();
             }
         }
-        
+
         invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -1170,24 +1183,28 @@ public class Table extends Observable {
     }
 
     private void playMoveSound() {
-        try{
-            Clip clip = AudioSystem.getClip();
-            AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"move2.wav"));
-            clip.open(ais);
-            clip.start();
-        } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
-            e.printStackTrace();
+        if(!soundMuted){
+            try{
+                Clip clip = AudioSystem.getClip();
+                AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"move2.wav"));
+                clip.open(ais);
+                clip.start();
+            } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     private void playCaptureSound() {
-        try{
-            Clip clip = AudioSystem.getClip();
-            AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"Capture.wav"));
-            clip.open(ais);
-            clip.start();
-        } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
-            e.printStackTrace();
+        if(!soundMuted){
+            try{
+                Clip clip = AudioSystem.getClip();
+                AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"Capture.wav"));
+                clip.open(ais);
+                clip.start();
+            } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

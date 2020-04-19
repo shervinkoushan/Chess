@@ -148,8 +148,8 @@ class GameSetup extends JDialog {
             drawWhite();
         }
 
-         myPanel.add(cancelButton);
-         myPanel.add(okButton);
+        myPanel.add(cancelButton);
+        myPanel.add(okButton);
      }
 
     private void drawBlack() {
