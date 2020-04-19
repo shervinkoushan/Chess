@@ -18,65 +18,61 @@ class GameSetup extends JDialog {
     private PlayerType blackPlayerType;
     private JSpinner whiteSearchDepthSpinner;
     private JSpinner blackSearchDepthSpinner;
+    private String[] engineChoices = {"Alpha Beta", "Minimax"};
+    private String[] evaluatorChoices = {"Standard", "Modified"};
+    private final JPanel myPanel = new JPanel();
+    private final JButton cancelButton = new JButton("Cancel");
+    private final JButton okButton = new JButton("OK");
+
+    private final ButtonGroup whiteGroup = new ButtonGroup();
+    private final JRadioButton whiteHumanButton = new JRadioButton(HUMAN_TEXT);
+    private final JRadioButton whiteComputerButton = new JRadioButton(COMPUTER_TEXT);
+    private final JComboBox<String> cbWhiteEngine = new JComboBox<String>(engineChoices);
+    final JComboBox<String> cbWhiteEvaluator = new JComboBox<String>(evaluatorChoices);
+
+    private final ButtonGroup blackGroup = new ButtonGroup();
+    private final JRadioButton blackHumanButton = new JRadioButton(HUMAN_TEXT);
+    private final JRadioButton blackComputerButton = new JRadioButton(COMPUTER_TEXT);
+    private final JComboBox<String> cbBlackEngine = new JComboBox<String>(engineChoices);
+    private final JComboBox<String> cbBlackEvaluator = new JComboBox<String>(evaluatorChoices);
 
     private BoardEvaluator whiteBoardEvaluator=new StandardBoardEvaluator();
     private BoardEvaluator blackBoardEvaluator=new StandardBoardEvaluator();
 
-    String whiteEngine="Alpha Beta";
-    String blackEngine="Alpha Beta";
+    private String whiteEngine="Alpha Beta";
+    private String blackEngine="Alpha Beta";
 
     private static final String HUMAN_TEXT = "Human";
     private static final String COMPUTER_TEXT = "Computer";
 
-    GameSetup(final JFrame frame,
-              final boolean modal) {
+    GameSetup(final JFrame frame, final boolean modal) {
         super(frame, modal);
-        final JPanel myPanel = new JPanel();
         myPanel.setLayout(new GridLayout(0,1));
-        final JRadioButton whiteHumanButton = new JRadioButton(HUMAN_TEXT);
-        final JRadioButton whiteComputerButton = new JRadioButton(COMPUTER_TEXT);
-        final JRadioButton blackHumanButton = new JRadioButton(HUMAN_TEXT);
-        final JRadioButton blackComputerButton = new JRadioButton(COMPUTER_TEXT);
+        myPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+        getContentPane().add(myPanel);
+
         whiteHumanButton.setActionCommand(HUMAN_TEXT);
-        final ButtonGroup whiteGroup = new ButtonGroup();
         whiteGroup.add(whiteHumanButton);
         whiteGroup.add(whiteComputerButton);
         whiteHumanButton.setSelected(true);
 
-        getContentPane().add(myPanel);
-        myPanel.add(new JLabel("White"));
-        myPanel.add(whiteHumanButton);
-        myPanel.add(whiteComputerButton);
-
-        myPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-
-        myPanel.add(new JLabel("White engine"));
-        String[] engineChoices = {"Alpha Beta", "Minimax"};
-        final JComboBox<String> engineCb = new JComboBox<String>(engineChoices);
-        engineCb.setSelectedIndex(0);
-        engineCb.setVisible(true);
-        myPanel.add(engineCb);
-
-        engineCb.addItemListener(new ItemListener() {
+        cbWhiteEngine.setSelectedIndex(0);
+        cbWhiteEngine.setVisible(true);
+        cbWhiteEngine.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                JComboBox engineCb = (JComboBox) e.getSource();
-                whiteEngine = (String) engineCb.getSelectedItem();
+                JComboBox cbWhiteEngine = (JComboBox) e.getSource();
+                whiteEngine = (String) cbWhiteEngine.getSelectedItem();
             }
         });
 
-        myPanel.add(new JLabel("White board evaluator"));
-        String[] choices = {"Standard", "Modified"};
-        final JComboBox<String> cb = new JComboBox<String>(choices);
-        cb.setSelectedIndex(0);
-        cb.setVisible(true);
-        myPanel.add(cb);
-
-        cb.addItemListener(new ItemListener() {
+        cbWhiteEvaluator.setSelectedIndex(0);
+        cbWhiteEvaluator.setVisible(true);
+        cbWhiteEvaluator.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                JComboBox cb = (JComboBox) e.getSource();
-                String chosenEvaluator = (String) cb.getSelectedItem();
+                JComboBox cbWhiteEvaluator = (JComboBox) e.getSource();
+                String chosenEvaluator = (String) cbWhiteEvaluator.getSelectedItem();
                 switch(chosenEvaluator){
                     case "Standard":
                         whiteBoardEvaluator = new StandardBoardEvaluator();
@@ -88,43 +84,27 @@ class GameSetup extends JDialog {
             }
         });
 
-        this.whiteSearchDepthSpinner = addLabeledSpinner(myPanel, "White Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
-
-
-        final ButtonGroup blackGroup = new ButtonGroup();
         blackGroup.add(blackHumanButton);
         blackGroup.add(blackComputerButton);
         blackHumanButton.setSelected(true);
 
-        myPanel.add(new JLabel("Black"));
-        myPanel.add(blackHumanButton);
-        myPanel.add(blackComputerButton);
-
-        myPanel.add(new JLabel("Black engine"));
-        final JComboBox<String> engineCb2 = new JComboBox<String>(engineChoices);
-        engineCb.setSelectedIndex(0);
-        engineCb.setVisible(true);
-        myPanel.add(engineCb2);
-
-        engineCb.addItemListener(new ItemListener() {
+        cbBlackEngine.setSelectedIndex(0);
+        cbBlackEngine.setVisible(true);
+        cbBlackEngine.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                JComboBox engineCb2 = (JComboBox) e.getSource();
-                blackEngine = (String) engineCb2.getSelectedItem();
+                JComboBox cbBlackEngine = (JComboBox) e.getSource();
+                blackEngine = (String) cbBlackEngine.getSelectedItem();
             }
         });
 
-        myPanel.add(new JLabel("Black board evaluator"));
-        final JComboBox<String> cb2 = new JComboBox<String>(choices);
-        cb2.setSelectedIndex(0);
-        cb2.setVisible(true);
-        myPanel.add(cb2);
-
-        cb2.addItemListener(new ItemListener() {
+        cbBlackEvaluator.setSelectedIndex(0);
+        cbBlackEvaluator.setVisible(true);
+        cbBlackEvaluator.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                JComboBox cb2 = (JComboBox) e.getSource();
-                String chosenEvaluator = (String) cb2.getSelectedItem();
+                JComboBox cbBlackEvaluator = (JComboBox) e.getSource();
+                String chosenEvaluator = (String) cbBlackEvaluator.getSelectedItem();
                 switch(chosenEvaluator){
                     case "Standard":
                         blackBoardEvaluator = new StandardBoardEvaluator();
@@ -135,11 +115,6 @@ class GameSetup extends JDialog {
                 }
             }
         });
-
-        this.blackSearchDepthSpinner = addLabeledSpinner(myPanel, "Black Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
-
-        final JButton cancelButton = new JButton("Cancel");
-        final JButton okButton = new JButton("OK");
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -156,13 +131,49 @@ class GameSetup extends JDialog {
             }
         });
 
-        myPanel.add(cancelButton);
-        myPanel.add(okButton);
-
-        setLocation(220,50);
+        setPreferredSize(new Dimension(this.getWidth(),this.getHeight()+610));
+        setLocation(220,150);
+        redo(false);
         pack();
         setVisible(false);
         }
+
+     public void redo(boolean flipped){
+        myPanel.removeAll();
+        if(flipped){
+            drawWhite();
+            drawBlack();
+        }
+        else{
+            drawBlack();
+            drawWhite();
+        }
+
+         myPanel.add(cancelButton);
+         myPanel.add(okButton);
+     }
+
+    private void drawBlack() {
+        myPanel.add(new JLabel("Black"));
+        myPanel.add(blackHumanButton);
+        myPanel.add(blackComputerButton);
+        myPanel.add(new JLabel("Black engine"));
+        myPanel.add(cbBlackEngine);
+        myPanel.add(new JLabel("Black board evaluator"));
+        myPanel.add(cbBlackEvaluator);
+        this.blackSearchDepthSpinner = addLabeledSpinner(myPanel, "Black Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
+    }
+
+    private void drawWhite() {
+        myPanel.add(new JLabel("White"));
+        myPanel.add(whiteHumanButton);
+        myPanel.add(whiteComputerButton);
+        myPanel.add(new JLabel("White engine"));
+        myPanel.add(cbWhiteEngine);
+        myPanel.add(new JLabel("White board evaluator"));
+        myPanel.add(cbWhiteEvaluator);
+        this.whiteSearchDepthSpinner = addLabeledSpinner(myPanel, "White Search Depth", new SpinnerNumberModel(4, 1, Integer.MAX_VALUE, 1));
+    }
 
 
     void promptUser() {
