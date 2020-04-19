@@ -33,7 +33,7 @@ import java.io.IOException;
 import static javax.swing.SwingUtilities.*;
 
 public class Table extends Observable {
-    private final JFrame gameFrame = new MyFrame("JChess");
+    private final JFrame gameFrame = new MyFrame("Chess");
     private final GameHistoryPanel gameHistoryPanel;
     private final TakenPiecesPanel takenPiecesPanel;
     private final BoardPanel boardPanel;
@@ -46,6 +46,7 @@ public class Table extends Observable {
     private Move computerMove;
     private Move engineMove;
     private List<String> gameHistory = new ArrayList<>();
+    private Engine analyzeEngine;
 
     private Tile sourceTile;
     private Tile destinationTile;
@@ -56,8 +57,10 @@ public class Table extends Observable {
     private boolean engineOutput = true;
     private boolean highlightEngineMoves = true;
     private boolean engineStop = true;
+    private boolean gameOver=false;
+    private boolean analyzeEngineStop = false;
 
-    private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(800, 740);
+    private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(850, 740);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension LOG_PANEL_DIMENSION = new Dimension(400, 30);
@@ -92,6 +95,18 @@ public class Table extends Observable {
         this.gameFrame.add(this.logPanel, BorderLayout.SOUTH);
         this.gameFrame.add(this.analyzePanel, BorderLayout.NORTH);
         this.gameFrame.setVisible(true);
+
+        this.gameHistoryPanel.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int row = gameHistoryPanel.getTable().rowAtPoint(evt.getPoint());
+                int col = gameHistoryPanel.getTable().columnAtPoint(evt.getPoint());
+                if (row >= 0 && col > 0) {
+                    setPly(2*row+col);
+                    updateGUI();
+                }
+            }
+        });
     }
 
     public static Table get() {
@@ -125,8 +140,8 @@ public class Table extends Observable {
         return this.boardDirection;
     }
 
-    private List<String> getGameHistory() {
-        return this.gameHistory;
+    private void setEngineStop(boolean stop) {
+        this.engineStop=stop;
     }
 
     private void addPly() {
@@ -144,7 +159,7 @@ public class Table extends Observable {
     }
 
     private void setPly(int ply) {
-        if (ply >= 0 && ply < this.moveLog.size()) {
+        if (ply >= 0 && ply <= this.moveLog.size()) {
             this.currentPly = ply;
         }
     }
@@ -171,6 +186,14 @@ public class Table extends Observable {
 
     private boolean getStopped() {
         return this.engineStop;
+    }
+
+    private boolean getGameOver(){
+        return this.gameOver;
+    }
+
+    private boolean isAnalyzeEngineStop(){
+        return this.analyzeEngineStop;
     }
 
     private MoveLog getMoveLog() {
@@ -250,6 +273,7 @@ public class Table extends Observable {
         updateEngineMove(null);
         setChanged();
         notifyObservers(playerType);
+        gameOver=checkIfGameOver();
     }
 
     private static class TableGameAIWatcher implements Observer {
@@ -257,22 +281,11 @@ public class Table extends Observable {
         @Override
         public void update(Observable o, Object arg) {
             if (Table.get().getGameSetup().isAIPlayer(Table.get().getGameBoard().currentPlayer()) &&
-                    !Table.get().getGameBoard().currentPlayer().isInCheckMate() &&
-                    !Table.get().getGameBoard().currentPlayer().isInStaleMate() &&
-                    !Table.get().getStopped()) {
+                    !Table.get().getGameOver() && !Table.get().getStopped()) {
                 //create an AI thread
                 final AIThinkTank thinkTank = new AIThinkTank();
                 //execute AI work
                 thinkTank.execute();
-            }
-            if (Table.get().getGameBoard().currentPlayer().isInCheckMate()) {
-                System.out.println("Game over, " + Table.get().getGameBoard().currentPlayer() + " is in checkmate");
-            } else if (Table.get().getGameBoard().currentPlayer().isInStaleMate()) {
-                System.out.println("Game over, " + Table.get().getGameBoard().currentPlayer() + " is in stalemate");
-            } else if (Table.get().getGameBoard().insufficientMaterial()) {
-                System.out.println("Game over, insufficient material");
-            } else if (Table.get().isThreeFold()) {
-                System.out.println("Game over, threefold repetition");
             }
         }
     }
@@ -282,6 +295,27 @@ public class Table extends Observable {
             if (Collections.frequency(gameHistory, position) == 3) {
                 return true;
             }
+        }
+        return false;
+    }
+
+    private boolean checkIfGameOver(){
+        if (chessBoard.currentPlayer().isInCheckMate()) {
+            System.out.println("Game over, " + chessBoard.currentPlayer() + " is in checkmate");
+            setEngineStop(true);
+            return true;
+        } else if (chessBoard.currentPlayer().isInStaleMate()) {
+            System.out.println("Game over, " + chessBoard.currentPlayer() + " is in stalemate");
+            setEngineStop(true);
+            return true;
+        } else if (chessBoard.insufficientMaterial()) {
+            System.out.println("Game over, insufficient material");
+            setEngineStop(true);
+            return true;
+        } else if (isThreeFold()) {
+            System.out.println("Game over, threefold repetition occurred in move "+Table.get().getCurrentPly());
+            setEngineStop(true);
+            return true;
         }
         return false;
     }
@@ -604,7 +638,7 @@ public class Table extends Observable {
                 @Override
                 public void mouseClicked(final MouseEvent e) {
 
-                    if (isRightMouseButton(e)) {
+                    if (isRightMouseButton(e) || (gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !engineStop) || gameOver) {
                         sourceTile = null;
                         destinationTile = null;
                         humanMovedPiece = null;
@@ -675,10 +709,10 @@ public class Table extends Observable {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (pieceImage != null) {
-                g.drawImage(pieceImage, 0, 0, this);
+                g.drawImage(pieceImage, 5, 0, this);
             }
             if (dotImage != null) {
-                g.drawImage(dotImage, 28, 28, this);
+                g.drawImage(dotImage, 30, 28, this);
             }
         }
 
@@ -801,6 +835,7 @@ public class Table extends Observable {
         final JButton openFEN = new JButton("Load FEN");
         final JButton copyFEN = new JButton("Copy FEN");
         JTextField txtInput = new JTextField(startingFEN);
+        final JButton stopAnalysis = new JButton("Stop Analysis");
 
         LogPanel() {
             txtInput.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -828,14 +863,13 @@ public class Table extends Observable {
 
             stopButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (engineStop && gameSetup.isAIPlayer(chessBoard.currentPlayer()) &&
-                            !chessBoard.currentPlayer().isInCheckMate() &&
-                            !chessBoard.currentPlayer().isInStaleMate()) {
+                    if (engineStop && gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !gameOver) {
                         engineStop = false;
                         stopButton.setText("Stop");
                         final AIThinkTank thinkTank = new AIThinkTank();
                         thinkTank.execute();
-                    } else {
+                    }
+                    else {
                         engineStop = true;
                         stopButton.setText("Start");
                     }
@@ -888,8 +922,17 @@ public class Table extends Observable {
                 }
             });
 
+            stopAnalysis.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    analyzeEngineStop=true;
+                    analyzeEngine.cancel(true);
+                }
+            });
+
             add(openFEN);
             add(txtInput);
+            add(stopAnalysis);
             setPreferredSize(LOG_PANEL_DIMENSION);
             validate();
         }
@@ -954,6 +997,7 @@ public class Table extends Observable {
             analyzeBtn.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    analyzeEngineStop=false;
                     switch (chosenEngine) {
                         case "Alpha Beta":
                             engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator);
@@ -962,8 +1006,8 @@ public class Table extends Observable {
                             engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator);
                             break;
                     }
-                    Engine e1 = new Engine(engine);
-                    e1.execute();
+                    analyzeEngine = new Engine(engine);
+                    analyzeEngine.execute();
                 }
             });
 
@@ -1013,18 +1057,19 @@ public class Table extends Observable {
 
         @Override
         protected Move doInBackground() throws Exception {
-            return engine.execute(Table.get().getGameBoard());
+            Move move= engine.execute(Table.get().getGameBoard());
+            return move;
         }
 
         @Override
         public void done() {
-            try {
-                Table.get().updateEngineMove(get());
-                Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
+            if(!Table.get().isAnalyzeEngineStop()){
+                try {
+                    Table.get().updateEngineMove(get());
+                    Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -1046,7 +1091,7 @@ public class Table extends Observable {
         }
 
         public MyFrame(final String s) {
-            super();
+            super(s);
             KeyboardFocusManager manager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
             manager.addKeyEventDispatcher(new MyDispatcher());
         }
@@ -1054,22 +1099,17 @@ public class Table extends Observable {
 
     private void goBack(){
         subtractPly();
-        updateGameHistory();
-        updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
-        invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
-                takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
-                boardPanel.drawBoard(chessBoard);
-            }
-        });
+        updateGUI();
     }
 
     private void goForward(){
         if (currentPly < moveLog.size()) {
             addPly();
         }
+        updateGUI();
+    }
+
+    private void updateGUI(){
         updateGameHistory();
         updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
         invokeLater(new Runnable() {

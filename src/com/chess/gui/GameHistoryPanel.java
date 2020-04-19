@@ -6,6 +6,7 @@ import com.chess.gui.Table.MoveLog;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.util.ArrayList;
 
@@ -21,11 +22,16 @@ public class GameHistoryPanel extends JPanel {
         table=new JTable(model);
         table.setRowHeight(15);
         table.setCellSelectionEnabled(true);
+        table.getTableHeader().setReorderingAllowed(false);
         this.scrollPane=new JScrollPane(table);
         this.scrollPane.setColumnHeaderView(table.getTableHeader());
         this.scrollPane.setPreferredSize(HISTORY_PANEL_DIMENSION);
         this.add(scrollPane,BorderLayout.CENTER);
         this.setVisible(true);
+    }
+
+    public JTable getTable(){
+        return table;
     }
 
     void redo(final Board board, final MoveLog moveLog, final int currentPly){
@@ -62,9 +68,24 @@ public class GameHistoryPanel extends JPanel {
 
         final JScrollBar vertical =scrollPane.getVerticalScrollBar();
         vertical.setValue(vertical.getMaximum());
+        setJTableColumnsWidth(this.table,this.scrollPane.getWidth()+5,26,37,37);
 
         repaint();
         validate();
+    }
+
+    public static void setJTableColumnsWidth(JTable table, int tablePreferredWidth,
+                                             double ... percentages) {
+        double total = 0;
+        for (int i = 0; i < table.getColumnModel().getColumnCount(); i++) {
+            total += percentages[i];
+        }
+
+        for (int i = 0; i < table.getColumnModel().getColumnCount(); i++) {
+            TableColumn column = table.getColumnModel().getColumn(i);
+            column.setPreferredWidth((int)
+                    (tablePreferredWidth * (percentages[i] / total)));
+        }
     }
 
     private static class DataModel extends DefaultTableModel {
@@ -174,6 +195,5 @@ public class GameHistoryPanel extends JPanel {
         public void setBlackMove(final String move){
             this.blackMove=move;
         }
-
     }
 }

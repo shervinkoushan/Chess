@@ -6,9 +6,11 @@ import com.chess.engine.board.Move;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.Player;
 
+import javax.swing.*;
+
 import static com.chess.engine.board.Move.*;
 
-public class MiniMax implements MoveStrategy{
+public class MiniMax implements MoveStrategy {
     private final BoardEvaluator boardEvaluator;
     private final int searchDepth;
     private long boardsEvaluated;

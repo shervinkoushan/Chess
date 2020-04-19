@@ -126,7 +126,6 @@ class GameSetup extends JDialog {
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                System.out.println("Cancel");
                 GameSetup.this.setVisible(false);
             }
         });
