@@ -122,9 +122,6 @@ public class Table extends Observable{
     }
 
     private void addPly() {
-        /*if(this.currentPly<this.moveLog.size()-1){
-            this.currentPly++;
-        }*/
         this.currentPly++;
     }
 
@@ -136,6 +133,12 @@ public class Table extends Observable{
 
     private void resetPly(){
         this.currentPly=0;
+    }
+
+    public void setPly(int ply){
+        if(ply>=0 && ply<this.moveLog.size()){
+            this.currentPly=ply;
+        }
     }
 
     private int getCurrentPly() {
@@ -579,6 +582,8 @@ public class Table extends Observable{
 
     private class TilePanel extends JPanel{
         private final int tileId;
+        private Image pieceImage;
+        private Image dotImage;
 
         TilePanel(final BoardPanel boardPanel, final int tileId){
             super(new GridBagLayout());
@@ -657,7 +662,22 @@ public class Table extends Observable{
             validate();
         }
 
+
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if(pieceImage!=null){
+                g.drawImage(pieceImage, 0, 0, this);
+            }
+            if(dotImage!=null){
+                g.drawImage(dotImage,28,28,this);
+            }
+        }
+
         public void drawTile(final Board board){
+            pieceImage=null;
+            dotImage=null;
             assignTileColor();
             assignTilePieceIcon(board);
             highlightTileBorder(chessBoard);
@@ -731,13 +751,12 @@ public class Table extends Observable{
 
         private void paintLegal() {
             try{
-                add(new JLabel(new ImageIcon(ImageIO.read(new File("art/misc/green_dot.png")))));
+               dotImage=ImageIO.read(new File("art/misc/green_dot.png"));
             }
             catch (Exception e){
                 e.printStackTrace();
             }
         }
-
 
         private Collection<Move> pieceLegalMoves(Board board) {
             if(humanMovedPiece != null && humanMovedPiece.getPieceAlliance() == board.currentPlayer().getAlliance()) {
@@ -754,7 +773,7 @@ public class Table extends Observable{
                             ImageIO.read(new File(defaultPieceImagePath+
                                     board.getTile(this.tileId).getPiece().getPieceAlliance().toString().substring(0,1)+
                                     board.getTile(this.tileId).getPiece().toString()+".png"));
-                    add(new JLabel(new ImageIcon(image)));
+                    pieceImage=image.getScaledInstance(image.getWidth()-8,image.getHeight()-8,Image.SCALE_SMOOTH);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
