@@ -65,7 +65,7 @@ public class Table extends Observable {
     private boolean gameEngineIsRunning=false;
     private boolean analyzeEngineStop = true;
     private boolean textHasFocus=false;
-    private boolean highlightNormalMoves=true;
+    private boolean highlightNormalMoves=false;
 
     private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(830, 740);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
@@ -526,6 +526,17 @@ public class Table extends Observable {
             }
         });
 
+        final JCheckBoxMenuItem normalHighlighterCheckbox = new JCheckBoxMenuItem("Highlight normal moves", false);
+        normalHighlighterCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                highlightNormalMoves = normalHighlighterCheckbox.isSelected();
+                boardPanel.drawBoard(chessBoard);
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
+            }
+        });
+
         final JCheckBoxMenuItem engineCheckbox = new JCheckBoxMenuItem("View engine output", true);
         engineCheckbox.addActionListener(new ActionListener() {
             @Override
@@ -558,6 +569,7 @@ public class Table extends Observable {
         });
 
         preferencesMenu.add(legalMoveHighlighterCheckbox);
+        preferencesMenu.add(normalHighlighterCheckbox);
         preferencesMenu.add(engineHighlighterCheckbox);
         preferencesMenu.add(engineCheckbox);
         preferencesMenu.add(variationCheckbox);
@@ -727,10 +739,16 @@ public class Table extends Observable {
                         sourceTile = null;
                         destinationTile = null;
                         humanMovedPiece = null;
-                    } else if (isLeftMouseButton(e)) {
+                    }
+                    else if (isLeftMouseButton(e)) {
                         if (sourceTile == null || chooseNewPiece) {
                             sourceTile = chessBoard.getTile(tileId);
-                            humanMovedPiece = sourceTile.getPiece();
+                            if(!(humanMovedPiece ==sourceTile.getPiece())){
+                                humanMovedPiece = sourceTile.getPiece();
+                            }
+                            else{
+                                humanMovedPiece=null;
+                            }
                             if (humanMovedPiece == null) {
                                 sourceTile = null;
                             }
@@ -814,7 +832,7 @@ public class Table extends Observable {
             assignTilePieceIcon(board);
             highlightTileBorder(chessBoard);
             highlightLegalMoves(chessBoard);
-            highlightAIMove();
+            highlightMoves();
             validate();
             repaint();
         }
@@ -829,7 +847,19 @@ public class Table extends Observable {
             }
         }
 
-        private void highlightAIMove() {
+        private void highlightMoves() {
+            if(highlightNormalMoves && (chessBoard.currentPlayer().getAlliance().isWhite() && gameSetup.getBlackPlayerType()==PlayerType.HUMAN
+                    || chessBoard.currentPlayer().getAlliance().isBlack() && gameSetup.getWhitePlayerType()==PlayerType.HUMAN || computerMove==null || engineStop))
+            {
+                if(moveLog.size()>currentPly-1 && moveLog.size()>0 && currentPly>0){
+                    Move lastMove=moveLog.getMoves().get(currentPly-1);
+                    if (this.tileId == lastMove.getCurrentCoordinate()) {
+                        setBackground(Color.orange);
+                    } else if (this.tileId == lastMove.getDestinationCoordinate()) {
+                        setBackground(Color.yellow);
+                    }
+                }
+            }
             if (highlightEngineMoves) {
                 if (engineMove != null) {
                     if (this.tileId == engineMove.getCurrentCoordinate()) {
@@ -844,18 +874,6 @@ public class Table extends Observable {
                         setBackground(Color.pink);
                     } else if (this.tileId == computerMove.getDestinationCoordinate()) {
                         setBackground(Color.red);
-                    }
-                }
-            }
-            if(highlightNormalMoves && (chessBoard.currentPlayer().getAlliance().isWhite() && gameSetup.getBlackPlayerType()==PlayerType.HUMAN
-            || chessBoard.currentPlayer().getAlliance().isBlack() && gameSetup.getWhitePlayerType()==PlayerType.HUMAN || computerMove==null || engineStop))
-            {
-                if(moveLog.size()>currentPly-1 && moveLog.size()>0 && currentPly>0){
-                    Move lastMove=moveLog.getMoves().get(currentPly-1);
-                    if (this.tileId == lastMove.getCurrentCoordinate()) {
-                        setBackground(Color.orange);
-                    } else if (this.tileId == lastMove.getDestinationCoordinate()) {
-                        setBackground(Color.yellow);
                     }
                 }
             }
