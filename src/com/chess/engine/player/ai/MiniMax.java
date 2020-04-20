@@ -6,7 +6,8 @@ import com.chess.engine.board.Move;
 import com.chess.engine.player.MoveTransition;
 import com.chess.engine.player.Player;
 
-import javax.swing.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.chess.engine.board.Move.*;
 
@@ -14,15 +15,26 @@ public class MiniMax extends MoveStrategy {
     private final BoardEvaluator boardEvaluator;
     private final int searchDepth;
     private long boardsEvaluated;
+    private int counter=0;
+    private List<Move> principalVariation=new ArrayList<>();
+    private boolean firstLook=true;
+    private boolean findVariation;
 
     public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator){
         this.boardEvaluator=boardEvaluator;
         this.searchDepth=searchDepth;
+        this.findVariation=false;
+    }
+    public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator, final boolean findVariation){
+        this.boardEvaluator=boardEvaluator;
+        this.searchDepth=searchDepth;
+        this.findVariation=findVariation;
     }
     public MiniMax(final int searchDepth){
         this.boardEvaluator= new StandardBoardEvaluator();
         this.searchDepth=searchDepth;
         this.boardsEvaluated=0;
+        this.findVariation=false;
     }
 
     @Override
@@ -39,7 +51,9 @@ public class MiniMax extends MoveStrategy {
         int lowestSeenValue=Integer.MAX_VALUE;
         int currentValue;
         int lastValue=0;
-        System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator);
+        if(firstLook){
+            System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator);
+        }
         int moveCounter=1;
         int numMoves=board.currentPlayer().getLegalMoves().size();
 
@@ -75,21 +89,49 @@ public class MiniMax extends MoveStrategy {
                 else {
                     s =toString() + " [" +this.searchDepth + "]" + ", m: (" +moveCounter+ "/" +numMoves+ ") " + move + " is illegal! best: " +bestMove;
                 }
-                System.out.println(s);
+                if(firstLook){
+                    System.out.println(s);
+                }
                 moveCounter++;
             }
         }
         if(!isCancelled()){
-            final long executionTime=System.currentTimeMillis()-startTime;
-            System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", currentPlayer,
-                    bestMove, this.boardsEvaluated, executionTime, (1000 * ((double)this.boardsEvaluated/executionTime)),
-                    ((double) lastValue) /100);
+            if(firstLook){
+                final long executionTime=System.currentTimeMillis()-startTime;
+                System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", currentPlayer,
+                        bestMove, this.boardsEvaluated, executionTime, (1000 * ((double)this.boardsEvaluated/executionTime)),
+                        ((double) lastValue) /100);
+            }
         }
         else{
             System.out.println("MiniMax stopped");
         }
+        counter++;
+        if(firstLook){
+            firstLook=false;
+        }
+        principalVariation.add(bestMove);
+        if(findVariation){
+            if(counter<this.searchDepth){
+                execute(board.currentPlayer().makeMove(bestMove).getTransitionBoard());
+            }
+            else{
+                printPrincipalVariation();
+            }
+        }
         return bestMove;
     }
+
+    private void printPrincipalVariation() {
+        StringBuilder s= new StringBuilder();
+        for(Move move:principalVariation){
+            if(!move.isNullMove()){
+                s.append(move).append(" ");
+            }
+        }
+        System.out.println(s);
+    }
+
 
     public int min(final Board board, final int depth){
         int lowestSeenValue=Integer.MAX_VALUE;

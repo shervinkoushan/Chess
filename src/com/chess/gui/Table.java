@@ -26,8 +26,6 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -58,12 +56,14 @@ public class Table extends Observable {
     private Piece humanMovedPiece;
     private int currentPly = 0;
 
+    private boolean findVariation=true;
     private boolean soundMuted=false;
     private boolean highlightLegals = true;
     private boolean engineOutput = true;
     private boolean highlightEngineMoves = true;
     private boolean engineStop = true;
     private boolean analyzeEngineStop = true;
+    private boolean textHasFocus=false;
 
     private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(830, 740);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
@@ -506,7 +506,7 @@ public class Table extends Observable {
             }
         });
 
-        final JCheckBoxMenuItem soundCheckbox = new JCheckBoxMenuItem("Mute sound", false);
+        final JCheckBoxMenuItem soundCheckbox = new JCheckBoxMenuItem("Mute sounds", false);
         soundCheckbox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -516,9 +516,20 @@ public class Table extends Observable {
             }
         });
 
+        final JCheckBoxMenuItem variationCheckbox = new JCheckBoxMenuItem("Find best variation when analyzing", true);
+        variationCheckbox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                findVariation = variationCheckbox.isSelected();
+                preferencesMenu.setPopupMenuVisible(true);
+                preferencesMenu.setSelected(true);
+            }
+        });
+
         preferencesMenu.add(legalMoveHighlighterCheckbox);
         preferencesMenu.add(engineHighlighterCheckbox);
         preferencesMenu.add(engineCheckbox);
+        preferencesMenu.add(variationCheckbox);
         preferencesMenu.add(soundCheckbox);
 
         preferencesMenu.addSeparator();
@@ -885,6 +896,15 @@ public class Table extends Observable {
                         @Override
                         public void run() {
                             txtInput.selectAll();
+                            textHasFocus=true;
+                        }
+                    });
+                }
+                public void focusLost(java.awt.event.FocusEvent evt){
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            textHasFocus=false;
                         }
                     });
                 }
@@ -1046,10 +1066,10 @@ public class Table extends Observable {
                         analyzeBtn.setText("Stop Analyzing");
                         switch (chosenEngine) {
                             case "Alpha Beta":
-                                engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator);
+                                engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator,findVariation);
                                 break;
                             case "Minimax":
-                                engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator);
+                                engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator,findVariation);
                                 break;
                         }
                         analyzeEngine = new Engine(engine);
@@ -1129,7 +1149,7 @@ public class Table extends Observable {
         private class MyDispatcher implements KeyEventDispatcher {
             @Override
             public boolean dispatchKeyEvent(KeyEvent e) {
-                if (e.getID() == KeyEvent.KEY_PRESSED) {
+                if (e.getID() == KeyEvent.KEY_PRESSED && !textHasFocus) {
                     if (e.getKeyCode() == KeyEvent.VK_LEFT) {
                         goBack();
                     }

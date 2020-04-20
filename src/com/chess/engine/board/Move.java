@@ -71,6 +71,10 @@ public abstract class Move {
         return this.movedPiece;
     }
 
+    public boolean isNullMove(){
+        return false;
+    }
+
     public boolean isAttack(){
         return false;
     }
@@ -519,6 +523,11 @@ public abstract class Move {
         @Override
         public String toString() {
             return "Null Move";
+        }
+
+        @Override
+        public boolean isNullMove(){
+            return true;
         }
     }
 

@@ -8,9 +8,7 @@ import com.chess.engine.player.Player;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Observable;
+import java.util.*;
 
 import static com.chess.engine.board.BoardUtils.mvvlva;
 import static com.chess.engine.board.Move.MoveFactory;
@@ -22,6 +20,10 @@ public class StockAlphaBeta extends MoveStrategy {
     private long executionTime;
     private int quiescenceCount;
     private static final int MAX_QUIESCENCE = 5000;
+    private int counter=0;
+    private List<Move> principalVariation=new ArrayList<>();
+    private boolean firstLook=true;
+    private boolean findVariation;
 
     @Override
     protected Move doInBackground() throws Exception {
@@ -59,6 +61,15 @@ public class StockAlphaBeta extends MoveStrategy {
         this.searchDepth = searchDepth;
         this.boardsEvaluated = 0;
         this.quiescenceCount = 0;
+        this.findVariation=false;
+    }
+
+    public StockAlphaBeta(final int searchDepth,final BoardEvaluator boardEvaluator, final boolean findVariation) {
+        this.evaluator = boardEvaluator;
+        this.searchDepth = searchDepth;
+        this.boardsEvaluated = 0;
+        this.quiescenceCount = 0;
+        this.findVariation=findVariation;
     }
 
     @Override
@@ -75,7 +86,9 @@ public class StockAlphaBeta extends MoveStrategy {
         int lowestSeenValue = Integer.MAX_VALUE;
         int currentValue;
         int lastValue=0;
-        System.out.println(board.currentPlayer() + " THINKING with depth = " + this.searchDepth);
+        if(firstLook){
+            System.out.println(board.currentPlayer() + " THINKING with depth = " + this.searchDepth);
+        }
         int moveCounter = 1;
         int numMoves = board.currentPlayer().getLegalMoves().size();
         Collection<Move> sortedMoves = MoveSorter.EXPENSIVE.sort((board.currentPlayer().getLegalMoves()));
@@ -113,22 +126,49 @@ public class StockAlphaBeta extends MoveStrategy {
                 } else {
                     s =toString() + " [" +this.searchDepth + "]" + ", m: (" +moveCounter+ "/" +numMoves+ ") " + move + " is illegal! best: " +bestMove;
                 }
-                System.out.println(s);
+                if(firstLook){
+                    System.out.println(s);
+                }
                 moveCounter++;
             }
         }
 
         if(!isCancelled()){
-            this.executionTime = System.currentTimeMillis() - startTime;
-            System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", board.currentPlayer(),
-                    bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)),((double) lastValue) /100);
+            if(firstLook){
+                this.executionTime = System.currentTimeMillis() - startTime;
+                System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", board.currentPlayer(),
+                        bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)),((double) lastValue) /100);
+            }
         }
         else{
             System.out.println("Alpha Beta stopped");
         }
+        counter++;
+        if(firstLook){
+            firstLook=false;
+        }
+        principalVariation.add(bestMove);
+        if(findVariation){
+            if(counter<this.searchDepth){
+                execute(board.currentPlayer().makeMove(bestMove).getTransitionBoard());
+            }
+            else{
+                printPrincipalVariation();
+            }
+        }
+
         return bestMove;
     }
 
+    private void printPrincipalVariation() {
+        StringBuilder s= new StringBuilder();
+        for(Move move:principalVariation){
+            if(!move.isNullMove()){
+                s.append(move).append(" ");
+            }
+        }
+        System.out.println(s);
+    }
 
 
     private static String score(final Player currentPlayer,
