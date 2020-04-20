@@ -21,9 +21,10 @@ public class StockAlphaBeta extends MoveStrategy {
     private int quiescenceCount;
     private static final int MAX_QUIESCENCE = 5000;
     private int counter=0;
-    private List<Move> principalVariation=new ArrayList<>();
     private boolean firstLook=true;
     private boolean findVariation;
+    private List<Move> principalVariation=new ArrayList<>();
+    private Player firstPlayer;
 
     @Override
     protected Move doInBackground() throws Exception {
@@ -88,6 +89,7 @@ public class StockAlphaBeta extends MoveStrategy {
         int lastValue=0;
         if(firstLook){
             System.out.println(board.currentPlayer() + " THINKING with depth = " + this.searchDepth);
+            firstPlayer=currentPlayer;
         }
         int moveCounter = 1;
         int numMoves = board.currentPlayer().getLegalMoves().size();
@@ -153,34 +155,12 @@ public class StockAlphaBeta extends MoveStrategy {
                 execute(board.currentPlayer().makeMove(bestMove).getTransitionBoard());
             }
             else{
-                printPrincipalVariation();
+                printMate(principalVariation,firstPlayer);
+                printPrincipalVariation(principalVariation);
             }
         }
 
         return bestMove;
-    }
-
-    private void printPrincipalVariation() {
-        StringBuilder s= new StringBuilder();
-        for(Move move:principalVariation){
-            if(!move.isNullMove()){
-                s.append(move).append(" ");
-            }
-        }
-        System.out.println(s);
-    }
-
-
-    private static String score(final Player currentPlayer,
-                                final int highestSeenValue,
-                                final int lowestSeenValue) {
-
-        if(currentPlayer.getAlliance().isWhite()) {
-            return "[score: " +highestSeenValue + "]";
-        } else if(currentPlayer.getAlliance().isBlack()) {
-            return "[score: " +lowestSeenValue+ "]";
-        }
-        throw new RuntimeException("Should not reach here");
     }
 
     private int max(final Board board,
@@ -237,7 +217,6 @@ public class StockAlphaBeta extends MoveStrategy {
 
     private int calculateQuiescenceDepth(final Board toBoard,
                                          final int depth) {
-//        return depth - 1;
         if(depth == 1 && this.quiescenceCount < MAX_QUIESCENCE) {
             int activityMeasure = 0;
             if (toBoard.currentPlayer().isInCheck()) {
@@ -254,10 +233,5 @@ public class StockAlphaBeta extends MoveStrategy {
             }
         }
         return depth - 1;
-    }
-
-    private static String calculateTimeTaken(final long start, final long end) {
-        final long timeTaken = (end - start) / 1000000;
-        return timeTaken + " ms";
     }
 }

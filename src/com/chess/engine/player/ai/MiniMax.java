@@ -19,6 +19,7 @@ public class MiniMax extends MoveStrategy {
     private List<Move> principalVariation=new ArrayList<>();
     private boolean firstLook=true;
     private boolean findVariation;
+    private Player firstPlayer;
 
     public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator){
         this.boardEvaluator=boardEvaluator;
@@ -29,12 +30,6 @@ public class MiniMax extends MoveStrategy {
         this.boardEvaluator=boardEvaluator;
         this.searchDepth=searchDepth;
         this.findVariation=findVariation;
-    }
-    public MiniMax(final int searchDepth){
-        this.boardEvaluator= new StandardBoardEvaluator();
-        this.searchDepth=searchDepth;
-        this.boardsEvaluated=0;
-        this.findVariation=false;
     }
 
     @Override
@@ -53,6 +48,7 @@ public class MiniMax extends MoveStrategy {
         int lastValue=0;
         if(firstLook){
             System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator);
+            firstPlayer=currentPlayer;
         }
         int moveCounter=1;
         int numMoves=board.currentPlayer().getLegalMoves().size();
@@ -116,22 +112,12 @@ public class MiniMax extends MoveStrategy {
                 execute(board.currentPlayer().makeMove(bestMove).getTransitionBoard());
             }
             else{
-                printPrincipalVariation();
+                printMate(principalVariation, firstPlayer);
+                printPrincipalVariation(principalVariation);
             }
         }
         return bestMove;
     }
-
-    private void printPrincipalVariation() {
-        StringBuilder s= new StringBuilder();
-        for(Move move:principalVariation){
-            if(!move.isNullMove()){
-                s.append(move).append(" ");
-            }
-        }
-        System.out.println(s);
-    }
-
 
     public int min(final Board board, final int depth){
         int lowestSeenValue=Integer.MAX_VALUE;
@@ -173,36 +159,6 @@ public class MiniMax extends MoveStrategy {
             }
         }
         return highestSeenValue;
-    }
-
-    private static String evaluation(int movesTillWhiteMates, int movesTillBlackMates, int value){
-        if(movesTillWhiteMates!=Integer.MAX_VALUE && value>20000){
-            return "White mates in "+movesTillWhiteMates+" moves";
-        }
-        else if(movesTillBlackMates!= 0 && value<-20000){
-            return "Black mates in "+movesTillBlackMates+" moves";
-        }
-        else{
-            return ""+(((double) value) /100);
-        }
-    }
-
-
-    private static String score(final Player currentPlayer,
-                                final int highestSeenValue,
-                                final int lowestSeenValue) {
-
-        if(currentPlayer.getAlliance().isWhite()) {
-            return "[score: " +highestSeenValue + "]";
-        } else if(currentPlayer.getAlliance().isBlack()) {
-            return "[score: " +lowestSeenValue+ "]";
-        }
-        throw new RuntimeException("Should not reach here");
-    }
-
-    private static String calculateTimeTaken(final long start, final long end) {
-        final long timeTaken = (end - start) / 1000000;
-        return timeTaken + " ms";
     }
 
     @Override

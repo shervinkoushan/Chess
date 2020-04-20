@@ -14,7 +14,7 @@ import static com.chess.engine.pieces.Piece.PieceType.*;
 public final class ModifiedBoardEvaluator implements BoardEvaluator {
     private static final int CHECK_BONUS=50;
     private static final int CHECKMATE_BONUS=10000;
-    private static final int DEPTH_BONUS=100;
+    private static final int DEPTH_BONUS=10;
     private static final int CASTLE_BONUS=60;
     private static final int MOBILITY_BONUS=30;
     private static final double PAWN_ADVANCED_BONUS = 1.5;
@@ -86,7 +86,7 @@ public final class ModifiedBoardEvaluator implements BoardEvaluator {
     }
 
     private static int depthBonus(int depth){
-        return depth == 0 ? 1 : DEPTH_BONUS *depth;
+        return DEPTH_BONUS * (depth+1);
     }
 
     private static int castled(Player player){
