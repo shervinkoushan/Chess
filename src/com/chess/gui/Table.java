@@ -65,6 +65,7 @@ public class Table extends Observable {
     private boolean gameEngineIsRunning=false;
     private boolean analyzeEngineStop = true;
     private boolean textHasFocus=false;
+    private boolean highlightNormalMoves=true;
 
     private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(830, 740);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
@@ -74,6 +75,7 @@ public class Table extends Observable {
     private final static String defaultPieceImagePath = "art/pieces/plain/";
     private final static String defaultSoundPath="art/sounds/";
     private final static String startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    private Board startingBoard=Board.createStandardBoard();
 
     private final Color LIGHT_TILE_COLOR = Color.decode("#EDD0A7");
     private final Color DARK_TILE_COLOR = Color.decode("#7D5E49");
@@ -244,7 +246,7 @@ public class Table extends Observable {
 
     public void updateGameHistory() {
         this.gameHistory.clear();
-        Board transitionBoard = Board.createStandardBoard();
+        Board transitionBoard = startingBoard;
         this.gameHistory.add(FenUtilities.createFENFromGame(transitionBoard));
         for (int i = 0; i < moveLog.size(); i++) {
             transitionBoard = transitionBoard.currentPlayer().makeMove(moveLog.getMoves().get(i)).getTransitionBoard();
@@ -265,21 +267,22 @@ public class Table extends Observable {
         @Override
         protected Move doInBackground() throws Exception {
             final MoveStrategy engine;
+            final int ply=Table.get().getCurrentPly();
             if (Table.get().getGameBoard().currentPlayer().getAlliance().isWhite()) {
                 if (Table.get().getGameSetup().getWhiteEngine().equals("Alpha Beta")) {
                     gameEngine = new StockAlphaBeta(Table.get().getGameSetup().getWhiteSearchDepth(),
-                            Table.get().getGameSetup().getWhiteBoardEvaluator(), Table.get().getGameSetup().isViewWhiteVariation());
+                            Table.get().getGameSetup().getWhiteBoardEvaluator(), Table.get().getGameSetup().isViewWhiteVariation(),ply);
                 } else {
                     gameEngine = new MiniMax(Table.get().getGameSetup().getWhiteSearchDepth(),
-                            Table.get().getGameSetup().getWhiteBoardEvaluator(),Table.get().getGameSetup().isViewWhiteVariation());
+                            Table.get().getGameSetup().getWhiteBoardEvaluator(),Table.get().getGameSetup().isViewWhiteVariation(),ply);
                 }
             } else {
                 if (Table.get().getGameSetup().getBlackEngine().equals("Alpha Beta")) {
                     gameEngine = new StockAlphaBeta(Table.get().getGameSetup().getBlackSearchDepth(),
-                            Table.get().getGameSetup().getBlackBoardEvaluator(), Table.get().getGameSetup().isViewBlackVariation());
+                            Table.get().getGameSetup().getBlackBoardEvaluator(), Table.get().getGameSetup().isViewBlackVariation(),ply);
                 } else {
                     gameEngine = new MiniMax(Table.get().getGameSetup().getBlackSearchDepth(),
-                            Table.get().getGameSetup().getBlackBoardEvaluator(), Table.get().getGameSetup().isViewBlackVariation());
+                            Table.get().getGameSetup().getBlackBoardEvaluator(), Table.get().getGameSetup().isViewBlackVariation(),ply);
                 }
             }
 
@@ -321,6 +324,10 @@ public class Table extends Observable {
         updateEngineMove(null);
         setChanged();
         notifyObservers(playerType);
+        if(isGameOver()){
+            printGameOver();
+            setEngineStop(true);
+        }
     }
 
     private static class TableGameAIWatcher implements Observer {
@@ -340,31 +347,30 @@ public class Table extends Observable {
     private boolean isThreeFold() {
         for (final String position : gameHistory) {
             if (Collections.frequency(gameHistory, position) == 3) {
-                return true;
+                //System.out.println(gameHistory);
+                //return true;
             }
         }
         return false;
     }
 
-    private boolean isGameOver(){
+    private void printGameOver(){
         if (chessBoard.currentPlayer().isInCheckMate()) {
             System.out.println("Game over, " + chessBoard.currentPlayer() + " is in checkmate");
-            setEngineStop(true);
-            return true;
         } else if (chessBoard.currentPlayer().isInStaleMate()) {
             System.out.println("Game over, " + chessBoard.currentPlayer() + " is in stalemate");
-            setEngineStop(true);
-            return true;
-        } else if (chessBoard.insufficientMaterial()) {
+        } else if (chessBoard.insufficientMaterial()){
             System.out.println("Game over, insufficient material");
-            setEngineStop(true);
-            return true;
-        } else if (isThreeFold()) {
-            System.out.println("Game over, threefold repetition occurred in move "+Table.get().getCurrentPly());
-            setEngineStop(true);
-            return true;
         }
-        return false;
+        else if (isThreeFold()) {
+            System.out.println("Game over, threefold repetition occurred in move "+(Table.get().getCurrentPly()+1)/2);
+        }
+    }
+
+    private boolean isGameOver(){
+        return chessBoard.currentPlayer().isInCheckMate() ||
+                chessBoard.currentPlayer().isInStaleMate() ||
+                chessBoard.insufficientMaterial() || isThreeFold();
     }
 
     private JMenuBar createTableMenuBar() {
@@ -421,6 +427,7 @@ public class Table extends Observable {
         restartMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                startingBoard=Board.createStandardBoard();
                 humanMovedPiece = null;
                 engineMove = null;
                 computerMove=null;
@@ -709,20 +716,26 @@ public class Table extends Observable {
             addMouseListener(new MouseListener() {
                 @Override
                 public void mouseClicked(final MouseEvent e) {
+                    boolean chooseNewPiece=false;
+                    if(chessBoard.getTile(tileId).getPiece()!=null) {
+                        if (chessBoard.getTile(tileId).getPiece().getPieceAlliance() == chessBoard.currentPlayer().getAlliance()) {
+                            chooseNewPiece = true;
+                        }
+                    }
 
                     if (isRightMouseButton(e) || (gameSetup.isAIPlayer(chessBoard.currentPlayer()) && !engineStop) || isGameOver() || !analyzeEngineStop) {
                         sourceTile = null;
                         destinationTile = null;
                         humanMovedPiece = null;
                     } else if (isLeftMouseButton(e)) {
-                        if (sourceTile == null) {
-                            //first click
+                        if (sourceTile == null || chooseNewPiece) {
                             sourceTile = chessBoard.getTile(tileId);
                             humanMovedPiece = sourceTile.getPiece();
                             if (humanMovedPiece == null) {
                                 sourceTile = null;
                             }
-                        } else {
+                        }
+                        else {
                             //second click, make the move
                             destinationTile = chessBoard.getTile(tileId);
                             Move move = Move.MoveFactory.createMove(chessBoard, sourceTile.getTileCoordinate(), destinationTile.getTileCoordinate());
@@ -810,7 +823,7 @@ public class Table extends Observable {
             if (humanMovedPiece != null &&
                     humanMovedPiece.getPieceAlliance() == board.currentPlayer().getAlliance() &&
                     humanMovedPiece.getPiecePosition() == this.tileId) {
-                setBorder(BorderFactory.createLineBorder(Color.cyan));
+                setBorder(BorderFactory.createLineBorder(Color.orange));
             } else {
                 setBorder(BorderFactory.createLineBorder(Color.GRAY));
             }
@@ -831,6 +844,18 @@ public class Table extends Observable {
                         setBackground(Color.pink);
                     } else if (this.tileId == computerMove.getDestinationCoordinate()) {
                         setBackground(Color.red);
+                    }
+                }
+            }
+            if(highlightNormalMoves && (chessBoard.currentPlayer().getAlliance().isWhite() && gameSetup.getBlackPlayerType()==PlayerType.HUMAN
+            || chessBoard.currentPlayer().getAlliance().isBlack() && gameSetup.getWhitePlayerType()==PlayerType.HUMAN || computerMove==null || engineStop))
+            {
+                if(moveLog.size()>currentPly-1 && moveLog.size()>0 && currentPly>0){
+                    Move lastMove=moveLog.getMoves().get(currentPly-1);
+                    if (this.tileId == lastMove.getCurrentCoordinate()) {
+                        setBackground(Color.orange);
+                    } else if (this.tileId == lastMove.getDestinationCoordinate()) {
+                        setBackground(Color.yellow);
                     }
                 }
             }
@@ -976,10 +1001,12 @@ public class Table extends Observable {
                     if (FenUtilities.createGameFromFEN(txtInput.getText()) != null) {
                         humanMovedPiece = null;
                         engineMove = null;
+                        computerMove=null;
                         resetPly();
                         moveLog.clear();
                         gameHistory.clear();
-                        updateGameBoard(FenUtilities.createGameFromFEN(txtInput.getText()));
+                        startingBoard=FenUtilities.createGameFromFEN(txtInput.getText());
+                        updateGameBoard(startingBoard);
                         gameHistory.add(txtInput.getText());
                     }
                     engineStop = true;
@@ -1026,7 +1053,7 @@ public class Table extends Observable {
         final JComboBox<String> cb2 = new JComboBox<String>(aiChoices);
         BoardEvaluator boardEvaluator = new StandardBoardEvaluator();
         String chosenEngine = "Alpha Beta";
-        MoveStrategy engine = new StockAlphaBeta(4, boardEvaluator);
+        MoveStrategy engine = new StockAlphaBeta(4, boardEvaluator, true, currentPly);
         JTextArea textArea = new JTextArea(3, 10);
         TextAreaOutputStream taOutputStream = new TextAreaOutputStream(textArea);
         String output = "";
@@ -1090,10 +1117,10 @@ public class Table extends Observable {
                         analyzeBtn.setText("Stop Analyzing");
                         switch (chosenEngine) {
                             case "Alpha Beta":
-                                engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator,findVariation);
+                                engine = new StockAlphaBeta((Integer) depthSpinner.getValue(), boardEvaluator,findVariation,currentPly);
                                 break;
                             case "Minimax":
-                                engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator,findVariation);
+                                engine = new MiniMax((Integer) depthSpinner.getValue(), boardEvaluator,findVariation,currentPly);
                                 break;
                         }
                         analyzeEngine = new Engine(engine);

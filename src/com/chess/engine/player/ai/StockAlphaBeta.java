@@ -25,6 +25,7 @@ public class StockAlphaBeta extends MoveStrategy {
     private boolean findVariation;
     private List<Move> principalVariation=new ArrayList<>();
     private Player firstPlayer;
+    private int currentPly;
 
     @Override
     protected Move doInBackground() throws Exception {
@@ -56,21 +57,13 @@ public class StockAlphaBeta extends MoveStrategy {
         abstract  Collection<Move> sort(Collection<Move> moves);
     }
 
-
-    public StockAlphaBeta(final int searchDepth,final BoardEvaluator boardEvaluator) {
-        this.evaluator = boardEvaluator;
-        this.searchDepth = searchDepth;
-        this.boardsEvaluated = 0;
-        this.quiescenceCount = 0;
-        this.findVariation=false;
-    }
-
-    public StockAlphaBeta(final int searchDepth,final BoardEvaluator boardEvaluator, final boolean findVariation) {
+    public StockAlphaBeta(final int searchDepth,final BoardEvaluator boardEvaluator, final boolean findVariation, final int currentPly) {
         this.evaluator = boardEvaluator;
         this.searchDepth = searchDepth;
         this.boardsEvaluated = 0;
         this.quiescenceCount = 0;
         this.findVariation=findVariation;
+        this.currentPly=currentPly;
     }
 
     @Override
@@ -156,7 +149,7 @@ public class StockAlphaBeta extends MoveStrategy {
             }
             else{
                 printMate(principalVariation,firstPlayer);
-                printPrincipalVariation(principalVariation);
+                printPrincipalVariation(principalVariation,currentPly,firstPlayer.getAlliance().isWhite());
             }
         }
 

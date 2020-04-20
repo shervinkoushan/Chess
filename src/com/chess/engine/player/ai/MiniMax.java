@@ -20,16 +20,13 @@ public class MiniMax extends MoveStrategy {
     private boolean firstLook=true;
     private boolean findVariation;
     private Player firstPlayer;
+    private int currentPly;
 
-    public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator){
-        this.boardEvaluator=boardEvaluator;
-        this.searchDepth=searchDepth;
-        this.findVariation=false;
-    }
-    public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator, final boolean findVariation){
+    public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator, final boolean findVariation, final int currentPly){
         this.boardEvaluator=boardEvaluator;
         this.searchDepth=searchDepth;
         this.findVariation=findVariation;
+        this.currentPly=currentPly;
     }
 
     @Override
@@ -113,7 +110,7 @@ public class MiniMax extends MoveStrategy {
             }
             else{
                 printMate(principalVariation, firstPlayer);
-                printPrincipalVariation(principalVariation);
+                printPrincipalVariation(principalVariation,currentPly,firstPlayer.getAlliance().isWhite());
             }
         }
         return bestMove;

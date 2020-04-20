@@ -47,12 +47,20 @@ public abstract class MoveStrategy extends SwingWorker<Move,String>{
     }
 
 
-    protected void printPrincipalVariation(final List<Move> principalVariation) {
+    protected void printPrincipalVariation(final List<Move> principalVariation, int currentPly, boolean whiteToMove) {
         StringBuilder s= new StringBuilder();
-        for(Move move:principalVariation){
+        if(!whiteToMove){
+            s.append((currentPly+1)/2).append("...");
+        }
+        for(int i=0;i<principalVariation.size();i++){
+            Move move=principalVariation.get(i);
+            if((currentPly+1)%2==1){
+                s.append((currentPly+2)/2).append(". ");
+            }
             if(!move.isNullMove()){
                 s.append(move).append(" ");
             }
+            currentPly++;
         }
         System.out.println(s);
     }
