@@ -50,6 +50,7 @@ public class Table extends Observable {
     private List<String> gameHistory = new ArrayList<>();
     private Engine analyzeEngine;
     private AIThinkTank aiThinkTank=new AIThinkTank();
+    private JMenu prefMenu=createPreferencesMenu();
 
     private Tile sourceTile;
     private Tile destinationTile;
@@ -67,13 +68,13 @@ public class Table extends Observable {
     private boolean textHasFocus=false;
     private boolean highlightNormalMoves=false;
 
-    private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(830, 740);
+    private final static Dimension OUTER_FRAME_DIMENSION = new Dimension(810, 740);
     private final static Dimension BOARD_PANEL_DIMENSION = new Dimension(400, 350);
     private final static Dimension TILE_PANEL_DIMENSION = new Dimension(10, 10);
     private final static Dimension LOG_PANEL_DIMENSION = new Dimension(400, 30);
     private final static Dimension ANALYZE_PANEL_DIMENSION = new Dimension(400, 100);
-    private final static String defaultPieceImagePath = "art/pieces/plain/";
-    private final static String defaultSoundPath="art/sounds/";
+    private final static String defaultPieceImagePath = "/art/pieces/plain/";
+    private final static String defaultSoundPath="/art/sounds/";
     private final static String startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     private Board startingBoard=Board.createStandardBoard();
 
@@ -108,6 +109,8 @@ public class Table extends Observable {
         this.gameHistoryPanel.getTable().addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
+                prefMenu.setPopupMenuVisible(false);
+                prefMenu.setSelected(false);
                 int row = gameHistoryPanel.getTable().rowAtPoint(evt.getPoint());
                 int col = gameHistoryPanel.getTable().columnAtPoint(evt.getPoint());
                 if (row >= 0 && col > 0) {
@@ -376,7 +379,7 @@ public class Table extends Observable {
     private JMenuBar createTableMenuBar() {
         final JMenuBar tableMenuBar = new JMenuBar();
         tableMenuBar.add(createFileMenu());
-        tableMenuBar.add(createPreferencesMenu());
+        tableMenuBar.add(prefMenu);
         tableMenuBar.add(createOptionsMenu());
         return tableMenuBar;
     }
@@ -728,6 +731,8 @@ public class Table extends Observable {
             addMouseListener(new MouseListener() {
                 @Override
                 public void mouseClicked(final MouseEvent e) {
+                    prefMenu.setPopupMenuVisible(false);
+                    prefMenu.setSelected(false);
                     boolean chooseNewPiece=false;
                     if(chessBoard.getTile(tileId).getPiece()!=null) {
                         if (chessBoard.getTile(tileId).getPiece().getPieceAlliance() == chessBoard.currentPlayer().getAlliance()) {
@@ -818,10 +823,10 @@ public class Table extends Observable {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (pieceImage != null) {
-                g.drawImage(pieceImage,2, 0, this);
+                g.drawImage(pieceImage,1, 0, this);
             }
             if (dotImage != null) {
-                g.drawImage(dotImage, 29, 28, this);
+                g.drawImage(dotImage, 28, 27, this);
             }
         }
 
@@ -911,7 +916,7 @@ public class Table extends Observable {
 
         private void paintLegal() {
             try {
-                dotImage = ImageIO.read(new File("art/misc/green_dot.png"));
+                dotImage = ImageIO.read(getClass().getResourceAsStream("/art/misc/green_dot.png"));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -929,7 +934,7 @@ public class Table extends Observable {
             if (board.getTile(this.tileId).isTileOccupied()) {
                 try {
                     final BufferedImage image =
-                            ImageIO.read(new File(defaultPieceImagePath +
+                            ImageIO.read(getClass().getResourceAsStream(defaultPieceImagePath +
                                     board.getTile(this.tileId).getPiece().getPieceAlliance().toString().substring(0, 1) +
                                     board.getTile(this.tileId).getPiece().toString() + ".png"));
                     pieceImage = image.getScaledInstance(image.getWidth() - 8, image.getHeight() - 8, Image.SCALE_SMOOTH);
@@ -963,6 +968,8 @@ public class Table extends Observable {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
+                            prefMenu.setPopupMenuVisible(false);
+                            prefMenu.setSelected(false);
                             txtInput.selectAll();
                             textHasFocus=true;
                         }
@@ -1280,7 +1287,8 @@ public class Table extends Observable {
         if(!soundMuted){
             try{
                 Clip clip = AudioSystem.getClip();
-                AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"move2.wav"));
+                AudioInputStream ais = AudioSystem.getAudioInputStream(
+                        new BufferedInputStream(getClass().getResourceAsStream(defaultSoundPath+"move2.wav")));
                 clip.open(ais);
                 clip.start();
             } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
@@ -1293,7 +1301,8 @@ public class Table extends Observable {
         if(!soundMuted){
             try{
                 Clip clip = AudioSystem.getClip();
-                AudioInputStream ais = AudioSystem.getAudioInputStream(new File(defaultSoundPath+"Capture.wav"));
+                AudioInputStream ais = AudioSystem.getAudioInputStream(
+                        new BufferedInputStream(getClass().getResourceAsStream(defaultSoundPath+"Capture.wav")));
                 clip.open(ais);
                 clip.start();
             } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {

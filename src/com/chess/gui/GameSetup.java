@@ -180,7 +180,7 @@ class GameSetup extends JDialog {
             }
         });
 
-        setLocation(220,150);
+        setLocation(215,128);
         redo(false);
         setVisible(false);
         }

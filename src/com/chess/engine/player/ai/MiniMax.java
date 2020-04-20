@@ -44,7 +44,7 @@ public class MiniMax extends MoveStrategy {
         int currentValue;
         int lastValue=0;
         if(firstLook){
-            System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator);
+            System.out.println(board.currentPlayer()+" THINKING with depth = "+this.searchDepth+". "+this.boardEvaluator+". Move "+(currentPly+2)/2);
             firstPlayer=currentPlayer;
         }
         int moveCounter=1;
