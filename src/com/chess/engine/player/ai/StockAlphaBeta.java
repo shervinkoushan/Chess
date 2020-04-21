@@ -81,7 +81,7 @@ public class StockAlphaBeta extends MoveStrategy {
         int currentValue;
         int lastValue=0;
         if(firstLook){
-            System.out.println(board.currentPlayer() + " THINKING with depth = " + this.searchDepth+". Move "+(currentPly+2)/2);
+            System.out.println(board.currentPlayer() + " THINKING with depth = " + this.searchDepth+". "+this.evaluator+". Move "+(currentPly+2)/2);
             firstPlayer=currentPlayer;
         }
         int moveCounter = 1;

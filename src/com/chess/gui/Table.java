@@ -113,6 +113,7 @@ public class Table extends Observable {
                 int col = gameHistoryPanel.getTable().columnAtPoint(evt.getPoint());
                 if (row >= 0 && col > 0) {
                     setPly(2*row+col);
+                    setEngineStop(true);
                     updateGUI();
                 }
             }
@@ -168,8 +169,7 @@ public class Table extends Observable {
             logPanel.setStopTxt("Start");
             if(gameEngineIsRunning){
                 gameEngineIsRunning=false;
-                //aiThinkTank.gameEngine.cancel(true);
-                Table.get().getAIThinkTank().getGameEngine().cancel(true);
+                aiThinkTank.getGameEngine().cancel(true);
             }
         }
         else{
@@ -852,21 +852,18 @@ public class Table extends Observable {
                     }
                 }
             }
-            if (highlightEngineMoves) {
-                if (engineMove != null) {
-                    if (this.tileId == engineMove.getCurrentCoordinate()) {
-                        setBackground(Color.cyan);
-                    } else if (this.tileId == engineMove.getDestinationCoordinate()) {
-                        setBackground(Color.blue);
-                    }
-                }
-
-                if (!engineStop && computerMove != null) {
+            else if (!engineStop && computerMove != null && highlightEngineMoves) {
                     if (this.tileId == computerMove.getCurrentCoordinate()) {
                         setBackground(Color.pink);
                     } else if (this.tileId == computerMove.getDestinationCoordinate()) {
                         setBackground(Color.red);
                     }
+            }
+            if (highlightEngineMoves && engineMove!=null) {
+                if (this.tileId == engineMove.getCurrentCoordinate()) {
+                    setBackground(Color.cyan);
+                } else if (this.tileId == engineMove.getDestinationCoordinate()) {
+                    setBackground(Color.blue);
                 }
             }
         }
