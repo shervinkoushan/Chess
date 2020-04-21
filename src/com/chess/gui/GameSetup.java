@@ -18,8 +18,8 @@ class GameSetup extends JDialog {
     private PlayerType blackPlayerType;
     private JSpinner whiteSearchDepthSpinner;
     private JSpinner blackSearchDepthSpinner;
-    private String[] engineChoices = {"Alpha Beta", "Minimax"};
-    private String[] evaluatorChoices = {"Standard", "Modified"};
+    private final String[] engineChoices = {"Alpha Beta", "Minimax"};
+    private final String[] evaluatorChoices = {"Standard", "Modified"};
     private final JPanel myPanel = new JPanel();
     private final JButton cancelButton = new JButton("Cancel");
     private final JButton okButton = new JButton("OK");

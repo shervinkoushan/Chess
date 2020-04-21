@@ -16,11 +16,11 @@ public class MiniMax extends MoveStrategy {
     private final int searchDepth;
     private long boardsEvaluated;
     private int counter=0;
-    private List<Move> principalVariation=new ArrayList<>();
+    private final List<Move> principalVariation=new ArrayList<>();
     private boolean firstLook=true;
-    private boolean findVariation;
+    private final boolean findVariation;
     private Player firstPlayer;
-    private int currentPly;
+    private final int currentPly;
 
     public MiniMax(final int searchDepth, final BoardEvaluator boardEvaluator, final boolean findVariation, final int currentPly){
         this.boardEvaluator=boardEvaluator;
@@ -30,7 +30,7 @@ public class MiniMax extends MoveStrategy {
     }
 
     @Override
-    protected Move doInBackground() throws Exception {
+    protected Move doInBackground() {
         return null;
     }
 

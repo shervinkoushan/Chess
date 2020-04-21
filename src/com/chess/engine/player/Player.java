@@ -126,7 +126,7 @@ public abstract class Player {
             if(!this.board.getTile(1+offset).isTileOccupied()
                     && !this.board.getTile(2+offset).isTileOccupied()
                     && !this.board.getTile(3+offset).isTileOccupied()){
-                final Tile rookTile=this.board.getTile(0+offset);
+                final Tile rookTile=this.board.getTile(offset);
                 if(rookTile.isTileOccupied() && rookTile.getPiece().isFirstMove()){
                     if(Player.calculateAttacksOnTile(2+offset,opponentLegals).isEmpty() &&
                             Player.calculateAttacksOnTile(3+offset,opponentLegals).isEmpty() &&

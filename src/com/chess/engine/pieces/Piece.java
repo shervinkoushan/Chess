@@ -3,12 +3,7 @@ package com.chess.engine.pieces;
 import com.chess.engine.Alliance;
 import com.chess.engine.board.Board;
 import com.chess.engine.board.Move;
-import com.chess.engine.player.MoveTransition;
-import com.google.common.collect.ImmutableList;
-
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public abstract class Piece {
     protected final PieceType pieceType;
@@ -88,9 +83,9 @@ public abstract class Piece {
         QUEEN("Q",900,"Queen"),
         KING("K",10000,"King");
 
-        private String pieceName;
-        private int pieceValue;
-        private String fullName;
+        private final String pieceName;
+        private final int pieceValue;
+        private final String fullName;
 
         PieceType(final String pieceName,final int pieceValue, final String fullName){
             this.pieceName=pieceName;

@@ -17,15 +17,14 @@ public class StockAlphaBeta extends MoveStrategy {
     private final BoardEvaluator evaluator;
     private final int searchDepth;
     private long boardsEvaluated;
-    private long executionTime;
     private int quiescenceCount;
     private static final int MAX_QUIESCENCE = 5000;
     private int counter=0;
     private boolean firstLook=true;
-    private boolean findVariation;
-    private List<Move> principalVariation=new ArrayList<>();
+    private final boolean findVariation;
+    private final List<Move> principalVariation=new ArrayList<>();
     private Player firstPlayer;
-    private int currentPly;
+    private final int currentPly;
 
     @Override
     protected Move doInBackground() throws Exception {
@@ -130,9 +129,9 @@ public class StockAlphaBeta extends MoveStrategy {
 
         if(!isCancelled()){
             if(firstLook){
-                this.executionTime = System.currentTimeMillis() - startTime;
+                long executionTime = System.currentTimeMillis() - startTime;
                 System.out.printf("%s SELECTS %s - [boards evaluated: %d, time taken: %d ms, rate: %.1f] - EVALUATION: %.2f\n", board.currentPlayer(),
-                        bestMove, this.boardsEvaluated, this.executionTime, (1000 * ((double)this.boardsEvaluated/this.executionTime)),((double) lastValue) /100);
+                        bestMove, this.boardsEvaluated, executionTime, (1000 * ((double)this.boardsEvaluated/ executionTime)),((double) lastValue) /100);
             }
         }
         else{

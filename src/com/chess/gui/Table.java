@@ -46,10 +46,10 @@ public class Table extends Observable {
     private final GameSetup gameSetup;
     private Move computerMove;
     private Move engineMove;
-    private List<String> gameHistory = new ArrayList<>();
+    private final List<String> gameHistory = new ArrayList<>();
     private Engine analyzeEngine;
     private AIThinkTank aiThinkTank=new AIThinkTank();
-    private JMenu prefMenu=createPreferencesMenu();
+    private final JMenu prefMenu=createPreferencesMenu();
 
     private Tile sourceTile;
     private Tile destinationTile;
@@ -128,7 +128,7 @@ public class Table extends Observable {
         invokeLater(new Runnable() {
             public void run() {
                 moveLog.clear();
-                gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+                gameHistoryPanel.redo(moveLog, currentPly);
                 boardPanel.drawBoard(chessBoard);
             }
         });
@@ -314,7 +314,7 @@ public class Table extends Observable {
         addPly();
         updateGameHistory();
         takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
-        gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+        gameHistoryPanel.redo(moveLog, currentPly);
         boardPanel.drawBoard(chessBoard);
         updateEngineMove(null);
         setChanged();
@@ -436,7 +436,7 @@ public class Table extends Observable {
                 gameHistory.add(startingFEN);
                 invokeLater(new Runnable() {
                     public void run() {
-                        gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+                        gameHistoryPanel.redo(moveLog, currentPly);
                         takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
                         boardPanel.drawBoard(chessBoard);
                     }
@@ -465,7 +465,7 @@ public class Table extends Observable {
             Table.get().updateGameHistory();
             Table.get().updateGameBoard(Board.createStandardBoard());
             Table.get().getAnalyzePanel().setOutPutStream();
-            Table.get().getGameHistoryPanel().redo(Table.get().getGameBoard(), Table.get().getMoveLog(), 0);
+            Table.get().getGameHistoryPanel().redo(Table.get().getMoveLog(), 0);
             Table.get().getTakenPiecesPanel().redo(Table.get().getMoveLog(), Table.get().getCurrentPly(), Table.get().getBoardDirection().isFlipped());
             Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
         } catch (final IOException | ParsePGNException e) {
@@ -1024,7 +1024,7 @@ public class Table extends Observable {
                     invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+                            gameHistoryPanel.redo(moveLog, currentPly);
                             takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
                             boardPanel.drawBoard(chessBoard);
                         }
@@ -1254,7 +1254,7 @@ public class Table extends Observable {
         invokeLater(new Runnable() {
             @Override
             public void run() {
-                gameHistoryPanel.redo(chessBoard, moveLog, currentPly);
+                gameHistoryPanel.redo(moveLog, currentPly);
                 takenPiecesPanel.redo(moveLog, currentPly, boardDirection.isFlipped());
                 boardPanel.drawBoard(chessBoard);
             }

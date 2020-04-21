@@ -1,6 +1,5 @@
 package com.chess.gui;
 
-import com.chess.engine.board.Board;
 import com.chess.engine.board.Move;
 import com.chess.gui.Table.MoveLog;
 
@@ -34,7 +33,7 @@ public class GameHistoryPanel extends JPanel {
         return table;
     }
 
-    void redo(final Board board, final MoveLog moveLog, final int currentPly){
+    void redo(final MoveLog moveLog, final int currentPly){
         int currentRow=0;
         this.model.clear();
         for(final Move move: moveLog.getMoves()){
@@ -181,7 +180,7 @@ public class GameHistoryPanel extends JPanel {
         }
 
         public String getRow(){
-            return (String) ""+this.currentRow;
+            return ""+this.currentRow;
         }
 
         public void setCurrentRow(final int row){

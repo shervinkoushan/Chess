@@ -5,8 +5,6 @@ import com.chess.engine.board.BoardUtils;
 import com.chess.engine.board.Move;
 import com.chess.engine.pieces.Piece;
 import com.chess.engine.player.Player;
-
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.chess.engine.pieces.Piece.PieceType.*;
@@ -21,7 +19,7 @@ public final class ModifiedBoardEvaluator implements BoardEvaluator {
     private static final int ATTACK_BONUS = 10;
     private static final int CAN_CASTLE_BONUS =5;
 
-    private static Map<Piece.PieceType,Integer> pieceValues=Map.of(PAWN, 100, KNIGHT,300, BISHOP, 300,ROOK,500,QUEEN,900,KING, 10000);
+    private static final Map<Piece.PieceType,Integer> pieceValues=Map.of(PAWN, 100, KNIGHT,300, BISHOP, 300,ROOK,500,QUEEN,900,KING, 10000);
 
     @Override
     public String toString(){
