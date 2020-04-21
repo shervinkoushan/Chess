@@ -16,7 +16,6 @@ import static com.chess.engine.pieces.Piece.PieceType.*;
 import static com.chess.pgn.PGNUtilities.persistPGNFile;
 import static com.chess.pgn.PGNUtilities.writeGameToPGNFile;
 
-import javax.sound.sampled.*;
 import javax.swing.filechooser.FileFilter;
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -74,7 +73,6 @@ public class Table extends Observable {
     private final static Dimension LOG_PANEL_DIMENSION = new Dimension(400, 30);
     private final static Dimension ANALYZE_PANEL_DIMENSION = new Dimension(400, 100);
     private final static String defaultPieceImagePath = "/art/pieces/plain/";
-    private final static String defaultSoundPath="/art/sounds/";
     private final static String startingFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     private Board startingBoard=Board.createStandardBoard();
 
@@ -304,12 +302,6 @@ public class Table extends Observable {
                     Table.get().updateGameBoard(Table.get().getGameBoard().currentPlayer().makeMove(bestMove).getTransitionBoard());
                     Table.get().getMoveLog().addMove(bestMove);
                     Table.get().moveMadeUpdate(PlayerType.COMPUTER);
-                    if(bestMove.isAttack()){
-                        Table.get().playCaptureSound();
-                    }
-                    else{
-                        Table.get().playMoveSound();
-                    }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
@@ -327,6 +319,7 @@ public class Table extends Observable {
         updateEngineMove(null);
         setChanged();
         notifyObservers(playerType);
+        playSound();
         if(isGameOver()){
             printGameOver();
             setEngineStop(true);
@@ -778,12 +771,6 @@ public class Table extends Observable {
                             if (transition.getMoveStatus().isDone()) {
                                 chessBoard = transition.getTransitionBoard();
                                 moveLog.addMove(move);
-                                if(move.isAttack()){
-                                    playCaptureSound();
-                                }
-                                else{
-                                    playMoveSound();
-                                }
                                 moveMadeUpdate(PlayerType.HUMAN);
                             }
                             sourceTile = null;
@@ -1211,6 +1198,7 @@ public class Table extends Observable {
         public void done() {
             if(!Table.get().isAnalyzeEngineStop()){
                 try {
+                    SoundUtils.playAnalysisDoneSound(Table.get().soundMuted);
                     Table.get().updateEngineMove(get());
                     Table.get().getBoardPanel().drawBoard(Table.get().getGameBoard());
                 } catch (InterruptedException | ExecutionException e) {
@@ -1264,14 +1252,7 @@ public class Table extends Observable {
         computerMove=null;
         updateGameHistory();
         updateGameBoard(FenUtilities.createGameFromFEN(gameHistory.get(currentPly)));
-        if(currentPly>0){
-            if(moveLog.getMoves().get(currentPly-1).isAttack()){
-                playCaptureSound();
-            }
-            else{
-                playMoveSound();
-            }
-        }
+        playSound();
 
         invokeLater(new Runnable() {
             @Override
@@ -1283,30 +1264,16 @@ public class Table extends Observable {
         });
     }
 
-    private void playMoveSound() {
-        if(!soundMuted){
-            try{
-                Clip clip = AudioSystem.getClip();
-                AudioInputStream ais = AudioSystem.getAudioInputStream(
-                        new BufferedInputStream(getClass().getResourceAsStream(defaultSoundPath+"move2.wav")));
-                clip.open(ais);
-                clip.start();
-            } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
-                e.printStackTrace();
+    private void playSound(){
+        if(currentPly>0 && !soundMuted){
+            if(isGameOver()){
+                SoundUtils.playGameOverSound();
             }
-        }
-    }
-
-    private void playCaptureSound() {
-        if(!soundMuted){
-            try{
-                Clip clip = AudioSystem.getClip();
-                AudioInputStream ais = AudioSystem.getAudioInputStream(
-                        new BufferedInputStream(getClass().getResourceAsStream(defaultSoundPath+"Capture.wav")));
-                clip.open(ais);
-                clip.start();
-            } catch (LineUnavailableException | UnsupportedAudioFileException | IOException e) {
-                e.printStackTrace();
+            else if(moveLog.getMoves().get(currentPly-1).isAttack()){
+                SoundUtils.playCaptureSound();
+            }
+            else{
+                SoundUtils.playMoveSound();
             }
         }
     }

@@ -75,7 +75,7 @@ public class PGNUtilities {
         }
         System.out.println("Parsed " +count+ " games, valid = " +validCount+". Source: "+pgnFile+". ");
         if(game!=null){
-            System.out.println("This is the last game in the file. Result: "+game.getWinner()+(game.getWinner()=="Tie" ? "" : "won"));
+            System.out.println("This is the last game in the file. Result: "+game.getWinner()+(game.getWinner()=="Tie" ? "" : " won"));
             System.out.println(game.toString());
         }
         return createMoveList(PGNUtilities.processMoveText(gameText));
